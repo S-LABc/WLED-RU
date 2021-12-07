@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+	<meta name="viewport" content="width=500">
+	<title>Настройки WiFi</title>
+	<script>
+		function H()
+		{
+			window.open("https://github.com/Aircoookie/WLED/wiki/Settings#wifi-settings");
+		}
+		function B()
+		{
+			window.open("/settings","_self");
+		}
+		function GetV()
+		{
+			//values injected by server while sending HTML
+		}
+	</script>
+	<style>
+		@import url("style.css");
+	</style>
+</head>
+<body onload="GetV()">
+	<form id="form_s" name="Sf" method="post">
+		<div class="helpB"><button type="button" onclick="H()">?</button></div>
+		<button type="button" onclick="B()">Назад</button><button type="submit">Сохранить и подключиться</button><hr>
+		<h2>Настройка WiFi</h2>
+		<h3>Подключиться к существующей сети</h3>
+		Имя (SSID, оставьте пустым, чтобы не подключаться): <br><input name="CS" maxlength="32"><br>
+		Пароль: <br> <input type="password" name="CP" maxlength="63"><br>
+		Статически IP (оставьте 0.0.0.0 для DHCP):<br>
+		<input name="I0" type="number" min="0" max="255" required> .
+		<input name="I1" type="number" min="0" max="255" required> .
+		<input name="I2" type="number" min="0" max="255" required> .
+		<input name="I3" type="number" min="0" max="255" required><br>
+		Статический шлюз:<br>
+		<input name="G0" type="number" min="0" max="255" required> .
+		<input name="G1" type="number" min="0" max="255" required> .
+		<input name="G2" type="number" min="0" max="255" required> .
+		<input name="G3" type="number" min="0" max="255" required><br>
+		Статическая маска подсети:<br>
+		<input name="S0" type="number" min="0" max="255" required> .
+		<input name="S1" type="number" min="0" max="255" required> .
+		<input name="S2" type="number" min="0" max="255" required> .
+		<input name="S3" type="number" min="0" max="255" required><br>
+		Адрес mDNS (оставьте пустым, если не используете mDNS):<br/>
+		http:// <input name="CM" maxlength="32"> .local<br>
+		IP клиента: <span class="sip"> Нет подключения </span> <br>
+		<h3>Настройка точки доступа</h3>
+		Имя (SSID, оставьте пустым, если не используете):<br> <input name="AS" maxlength="32"><br>
+		Скрыть имя точки доступа: <input type="checkbox" name="AH"><br>
+		Пароль (оставьте пустым, чтобы была открытой):<br> <input type="password" name="AP" maxlength="63" pattern="(.{8,63})|()" title="Пусто или не менее 8 символов"><br>
+		Канал WiFi: <input name="AC" type="number" min="1" max="13" required><br>
+    Запускать точку доступа:
+    <select name="AB">
+    <option value="0">Когда невозможно подключиться к сети</option>
+    <option value="1">После отключения от сети</option>
+    <option value="2">Всегда</option>
+    <option value="3">Никогда (не рекомендуется)</option></select><br>
+		IP точки доступа: <span class="sip"> Нет данных </span><br>
+		<h3>Экспериментально</h3>
+		Отключить спящий режим WiFi: <input type="checkbox" name="WS"><br>
+		<i>Может помочь с проблемами подключения.<br>
+	Не включайте, если Wi-Fi работает правильно (увеличивает энергопотребление).</i>
+    <div id="ethd">
+		<h3>Тип Ethernet</h3>
+		<select name="ETH">
+		<option value="0">Нет</option>
+    <option value="2">ESP32-POE</option>
+    <option value="4">QuinLED-ESP32</option>
+    <option value="3">WESP32</option>
+		<option value="1">WT32-ETH01</option>
+    </select><br><br></div>
+		<hr>
+		<button type="button" onclick="B()">Назад</button><button type="submit">Сохранить и подключиться</button>
+	</form>
+</body>
+</html>

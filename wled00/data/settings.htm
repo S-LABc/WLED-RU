@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head><meta charset="UTF-8">
+	<title>Настройки WLED</title>
+	<style>
+		body {
+			text-align: center;
+			background: #222;
+			height: 100px;
+			margin: 0;
+		}
+		html {
+			--h: 11.55vh;
+		}
+		button {
+			background: #333;
+			color: #fff;
+			font-family: Verdana, Helvetica, sans-serif;
+			border: 0.3ch solid #333;
+			display: inline-block;
+			font-size: 8vmin;
+			height: var(--h);
+			width: 95%;
+			margin-top: 2.4vh;
+		}
+	</style>
+	<script>
+	function BB()
+	{
+		if (window.frameElement) {
+			document.getElementById("b").style.display = "none";
+			document.documentElement.style.setProperty('--h',"13.86vh");
+		}
+	}
+	</script>
+</head>
+<body onload="BB()">
+<form action="/"><button type=submit id="b">Назад</button></form>
+<form action="/settings/wifi"><button type="submit">Настроить WiFi</button></form>
+<form action="/settings/leds"><button type="submit">Настроить светодиоды</button></form>
+<form action="/settings/ui"><button type="submit">Интерфейс пользователя</button></form>
+<form action="/settings/sync"><button type="submit">Интерфейсы синхронизации</button></form>
+<form action="/settings/time"><button type="submit">Время и макропресеты</button></form>
+<form action="/settings/sec"><button type="submit">Обновления и безопасность</button></form>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta name="viewport" content="width=500">
+	<meta charset="utf-8">
+	<title>Настройки времени</title>
+	<script>
+    var d=document;
+		function H()
+		{
+			window.open("https://github.com/Aircoookie/WLED/wiki/Settings#time-settings");
+		}
+		function B()
+		{
+			window.open("/settings","_self");
+		}
+		function S()
+		{
+			BTa();GetV();Cs();FC();
+		}
+		function gId(s)
+		{
+			return d.getElementById(s);
+		}
+		function Cs()
+		{
+			gId("cac").style.display="none";
+			gId("coc").style.display="block";
+			gId("ccc").style.display="none";
+			if (gId("ca").selected)
+			{
+				gId("cac").style.display="block";
+			}
+			if (gId("cc").selected)
+			{
+				gId("coc").style.display="none";
+				gId("ccc").style.display="block";
+			}
+			if (gId("cn").selected)
+			{
+				gId("coc").style.display="none";
+			}
+		}
+    function BTa()
+    {
+      var ih="<tr><th>Активно</th><th>Часов</th><th>Минут</th><th>Пресет</th><th>Пн</th><th>Вт</th><th>Ср</th><th>Чт</th><th>Пт</th><th>Сб</th><th>Вс</th></tr>";
+      for (i=0;i<8;i++)
+      {
+        ih+="<tr><td><input name=\"W"+i+"\" id=\"W"+i+"\" type=\"number\" style=\"display:none\"><input id=\"W"+i+"0\" type=\"checkbox\"></td><td><input name=\"H"+i+"\" type=\"number\" min=\"0\" max=\"24\"></td><td><input name=\"N"+i+"\" type=\"number\" min=\"0\" max=\"59\"></td><td><input name=\"T"+i+"\" type=\"number\" min=\"0\" max=\"250\"></td>";
+        for (j=1;j<8;j++) ih+="<td><input id=\"W"+i+j+"\" type=\"checkbox\"></td>";
+      }
+      gId("TMT").innerHTML=ih;
+    }
+    function FC()
+    {
+      for(j=0;j<8;j++)
+      {
+        for(i=0;i<8;i++) gId("W"+i+j).checked=gId("W"+i).value>>j&1;
+      }
+    }
+    function Wd()
+    {
+      a=[0,0,0,0,0,0,0,0];
+      for(i=0;i<8;i++)
+      {
+        m=1;
+        for(j=0;j<8;j++)
+        {
+          a[i]+=gId("W"+i+j).checked*m;m*=2;
+        }
+        gId("W"+i).value=a[i];
+      }
+    }
+		function GetV()
+		{
+			//values injected by server while sending HTML
+		}
+	</script>
+	<style>
+		@import url("style.css");
+	</style>
+</head>
+<body onload="S()">
+	<form id="form_s" name="Sf" method="post" onsubmit="Wd()">
+		<div class="helpB"><button type="button" onclick="H()">?</button></div>
+		<button type="button" onclick="B()">Назад</button><button type="submit">Сохранить</button><hr>
+		<h2>Время</h2>
+		Получать время с NTP-сервера: <input type="checkbox" name="NT"><br>
+    <input name="NS" maxlength="32"><br>
+	24-часовой формат: <input type="checkbox" name="CF"><br>
+		Часовой пояс: 
+		<select name="TZ">
+			<option value="0" selected>GMT(UTC)</option>
+			<option value="1">GMT/BST</option>
+			<option value="2">CET/CEST</option>
+			<option value="3">EET/EEST</option>
+			<option value="4">US-EST/EDT</option>
+			<option value="5">US-CST/CDT</option>
+			<option value="6">US-MST/MDT</option>
+			<option value="7">US-AZ</option>
+			<option value="8">US-PST/PDT</option>
+			<option value="9">CST(AWST)</option>
+			<option value="10">JST(KST)</option>
+			<option value="11">AEST/AEDT</option>
+			<option value="12">NZST/NZDT</option>
+      <option value="13">Северная Корея</option>
+      <option value="14">IST (Индия)</option>
+      <option value="15">CA-Saskatchewan</option>
+      <option value="16">ACST</option>
+      <option value="17">ACST/ACDT</option>
+      <option value="18">HST (Гавайи)</option>
+		</select><br>
+		Смещение UTC: <input name="UO" type="number" min="-65500" max="65500" required> секунд (макс. 18 часов)<br>
+		Местное время - <span class="times">неизвестно</span>.
+		<h3>Часы</h3>
+		Наложение циферблата:
+		<select name="OL" onchange="Cs()">
+			<option value="0" id="cn" selected>Нет</option>
+			<option value="1" id="ca">Стрелочный</option>
+			<option value="2">Числовой</option>
+			<option value="3" id="cc">Газоразрядный</option>
+		</select><br>
+		<div id="coc">
+		Первый светодиод: <input name="O1" type="number" min="0" max="255" required> Последний светодиод: <input name="O2" type="number" min="0" max="255" required><br>
+			<div id="cac">
+			12-й светодиод: <input name="OM" type="number" min="0" max="255" required><br>
+			Отметки 5 минут: <input type="checkbox" name="O5"><br></div>
+			Секунды (как след): <input type="checkbox" name="OS"><br>
+		</div>
+		<div id="ccc">
+		Циферблат: <input name="CX" maxlength="6"><br>
+		Подсветка: <input type="checkbox" name="CB"><br>
+		</div>
+		Режим обратного отсчета: <input type="checkbox" name="CE"><br>
+		Цель обратного отсчета:<br>
+		Год: 20 <input name="CY" type="number" min="0" max="99" required> Месяц: <input name="CI" type="number" min="1" max="12" required> День: <input name="CD" type="number" min="1" max="31" required><br>
+		Час: <input name="CH" type="number" min="0" max="23" required> Минута: <input name="CM" type="number" min="0" max="59" required> Секунда: <input name="CS" type="number" min="0" max="59" required><br>
+		<h3>Макро пресеты</h3>
+    <b>Макросы переехали!</b><br>
+    <i>Пресеты теперь можно использовать в качестве макросов для сохранения JSON и HTTP API команд.<br>
+    Просто укажите ID пресета ниже.</i>
+		<i>Используйте 0 для действия по умолчанию вместо пресета</i><br>
+		Вкл\выкл Alexa: <input name="A0" type="number" min="0" max="250" required> <input name="A1" type="number" min="0" max="250" required><br>
+		Короткое нажатие кнопки: <input name="MP" type="number" min="0" max="250" required><br>
+		Долгое нажатие кнопки: <input name="ML" type="number" min="0" max="250" required> Двойное нажатие кнопки: <input name="MD" type="number" min="0" max="250" required><br>	
+		Обртный отсчет: <input name="MC" type="number" min="0" max="250" required><br>
+		Подсветка по таймеру: <input name="MN" type="number" min="0" max="250" required><br>
+		<h3>Пресеты по расписанию</h3>
+    <div style="display: inline-block">
+    <table id="TMT">
+    </table></div><hr>
+		<button type="button" onclick="B()">Назад</button><button type="submit">Сохранить</button>
+	</form>
+</body>
+</html>

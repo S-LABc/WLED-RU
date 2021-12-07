@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta name="viewport" content="width=500"><meta charset="utf-8"><title>Настройки DMX</title>
+<script>
+function GCH(num) {
+  d=document;
+  d.getElementById('dmxchannels').innerHTML += "";
+  for (i=0;i<num;i++) {
+    d.getElementById('dmxchannels').innerHTML += "<span id=CH" + (i+1) + "s >Канал " + (i+1) + ": <select name=CH" + (i+1) + " id=\"CH" + (i+1) + "\"><option value=0>Установить 0</option><option value=1>Красный</option><option value=2>Зеленый</option><option value=3>Синий</option><option value=4>Белый</option><option value=5>Затвор (яркость)</option><option value=6>Установить 255</option></select></span><br />\n";
+  }
+}
+function mMap(){
+  d=document;
+  numCh=document.Sf.CN.value;
+  numGap=document.Sf.CG.value;
+  if (parseInt(numCh)>parseInt(numGap)) {
+    d.getElementById("gapwarning").style.display="block";
+  } else {
+    d.getElementById("gapwarning").style.display="none";
+  }
+  for (i=0;i<15;i++) {
+    if (i>=numCh) {
+      d.getElementById("CH"+(i+1) + "s").style.opacity = "0.5";
+      d.getElementById("CH"+(i+1)).disabled = true;
+      
+    } else {
+      d.getElementById("CH"+(i+1) + "s").style.opacity = "1";
+      d.getElementById("CH"+(i+1)).disabled = false;
+    }
+  }
+}
+function S(){GCH(15);GetV();mMap();}function H(){window.open("https://github.com/Aircoookie/WLED/wiki/DMX");}function B(){window.history.back();}
+function GetV(){}
+</script>
+<style>
+	@import url("style.css");
+</style>
+</head>
+<body onload="S()">
+<form id="form_s" name="Sf" method="post">
+<div class="helpB"><button type="button" onclick="H()">?</button></div>
+<button type="button" onclick="B()">Назад</button><button type="submit">Сохранить</button><hr>
+<h2>Imma firin ma lazer (если есть поддержка DMX)</h2><!-- TODO: Change to something less-meme-related //-->
+
+Прокси-вселенная <input name=PU type=number min=0 max=63999 required> от E1.31 до DMX (0 - отключено)<br>
+<i>Отключит вывод данных светодиода в DMX, настраиваемый ниже.</i><br><br>
+<i>Количество светильников берется со страницы конфигурации светодиодов.</i><br>
+
+Каналов у светильника (макс. 15): <input type="number" min="1" max="15" name="CN" maxlength="2" onchange="mMap();"><br />
+Первый канал: <input type="number" min="1" max="512" name="CS" maxlength="2"><br />
+Промежуток между первыми каналами: <input type="number" min="1" max="512" name="CG" maxlength="2" onchange="mMap();"> [ <a href="javascript:alert('если установлено значение 10, первый светильник начнется с 10,\nвторой начнется с 20 и т.д.\nВне зависимости от количества каналов.\nУпрощает запоминание номеров каналов.');">info</a> ]<br>
+<div id="gapwarning" style="color: orange; display: none;">ВНИМАНИЕ: промежуток между каналами меньше, чем количество каналов у светильника.<br />Это приведет к перекрытию.</div>
+<button type="button" onclick="location.href='/dmxmap';">Карта DMX</button><br>
+Светодиод запуска DMX-светильников: <input type="number" min="0" max="1500" name="SL">
+<h3>Функции каналов</h3>
+<div id="dmxchannels"></div>
+<hr><button type="button" onclick="B()">Назад</button><button type="submit">Сохранить</button>
+</form>
+</body>
+</html>

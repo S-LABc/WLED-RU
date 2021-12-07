@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta name="viewport" content="width=500">
+	<meta charset="utf-8">
+	<title>Прочие настройки</title>
+	<script>
+		function H()
+		{
+			window.open("https://github.com/Aircoookie/WLED/wiki/Settings#security-settings");
+		}
+		function B()
+		{
+			window.open("/settings","_self");
+		}
+		function U()
+		{
+			window.open("/update","_self");
+		}
+		function GetV()
+		{
+			//values injected by server while sending HTML
+		}
+	</script>
+	<style>
+		@import url("style.css");
+	</style>
+</head>
+<body onload="GetV()">
+	<form id="form_s" name="Sf" method="post">
+		<div class="helpB"><button type="button" onclick="H()">?</button></div>
+		<button type="button" onclick="B()">Назад</button><button type="submit">Сохранить и перезагрузить</button><hr>
+		<h2>Обновение и безопасность</h2>
+		Блокировка обновлений через OTA: <input type="checkbox" name="NO"><br>
+		Кодовое слово: <input type="password" name="OP" maxlength="32"><br>
+		Чтобы включить режим OTA, также потребуется ввести кодовое слово!<br>
+		Кодовое слово можно изменить когда режим OTA включен.<br>
+		<b>Отключайте OTA, когда он не используется, иначе злоумышленник может перепрограммировать устройство!</b><br>
+		<i>Настройки на этой странице можно изменить, только если блокировка OTA отключена!</i><br>
+		Запретить доступ к настройкам WiFi, если он заблокирован: <input type="checkbox" name="OW"><br><br>
+		Сброс к заводским настройкам: <input type="checkbox" name="RS"><br>
+		Все содержимое EEPROM (настройки) будет удалено.<br><br>
+		HTTP-трафик не имеет шифрования. Злоумышленник в той же сети может перехватить данные формы!
+		<h3>Обновление программного обеспечения</h3>
+		<button type="button" onclick="U()">Обновление через OTA</button><br>
+		Включить ArduinoOTA: <input type="checkbox" name="AO"><br>
+		<h3>О проекте</h3>
+		<a href="https://github.com/Aircoookie/WLED/" target="_blank">WLED</a> version ##VERSION##<!-- Autoreplaced from package.json --><br><br>
+		<a href="https://github.com/Aircoookie/WLED/wiki/Contributors-and-credits" target="_blank">Авторы и благодарности</a><br>
+		Огромное спасибо всем, кто помог мне создать WLED!<br><br>
+		(c) 2016-2021 Christian Schwinne (Кристиан Швинн) <br>
+		<i>Лицензия <a href="https://github.com/Aircoookie/WLED/blob/master/LICENSE" target="_blank">MIT license</a></i><br><br>
+		Сообщение от сервера: <span class="sip"> Ошибка ответа! </span><hr>
+		<button type="button" onclick="B()">Назад</button><button type="submit">Сохранить и перезагрузить</button>
+	</form>
+</body>
+</html>
