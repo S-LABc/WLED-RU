@@ -31,7 +31,7 @@
 - [wled00/data/**settings_dmx.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/settings_dmx.htm) @ Настройки DMX
 - [wled00/data/**settings_leds.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/settings_leds.htm) @ Настройки светодиодов
 - [wled00/data/**settings_sec.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/settings_sec.htm) @ Настройки безопасности
-- [wled00/data/**settings_sync.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/settings_sync.htm) @ Настройки минхронизации
+- [wled00/data/**settings_sync.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/settings_sync.htm) @ Настройки синхронизации
 - [wled00/data/**settings_time.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/settings_time.htm) @ Настройки времени
 - [wled00/data/**settings_ui.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/settings_ui.htm) @ Настройки интерфейса пользователя
 - [wled00/data/**settings_wifi.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/settings_wifi.htm) @ Настройки Wi-Fi
@@ -60,7 +60,7 @@
 
 *Предупреждение от авторов проекта WLED:*
 
-Если у вас может возникнуть эпилепсия от вспцшек или света, не рекомендуется использовать это программное обеспечение.
+Если у вас может возникнуть эпилепсия от вспышек или света, не рекомендуется использовать это программное обеспечение.
 Если вы все же хотите попробовать, не используйте режимы с эффектом стробоскопа, вспешек, шума, не задавайте высокую скорость эффектам.
 В соответствии с лицензией MIT я не несу ответственности за любой ущерб, причиненный вам или любому другому человеку или оборудованию. 
 
