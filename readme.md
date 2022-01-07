@@ -10,7 +10,7 @@
 - Официальный сайт проекта WLED находится [*здесь*](https://kno.wled.ge/).
 - Официальные стабильные двоичные релизы ***v0.12.0*** находится [*здесь*](https://github.com/Aircoookie/WLED/releases/tag/v0.12.0).
 - **Русскоязычные** стабильные двоичные релизы ***v0.12.0*** находится [*здесь*](https://github.com/S-LABc/WLED-RU/releases).
-- Программа для записи прошивки в микроконтроллер [Flash Download Tools](https://www.espressif.com/en/support/download/other-tools). Или можно прошивать через [PlatformIO](https://platformio.org/) как это и было задумано.
+- Программа для записи прошивки в микроконтроллер [Flash Download Tools](https://www.espressif.com/en/support/download/other-tools). Или можно прошивать через [PlatformIO](https://platformio.org/) как это и было задумано. **Прошивка через OTA тоже работает**, все работает как и в оригинальной.
 
 Если нужно связаться со мной [romansklyar15@gmail.com](mailto:romansklyar15@gmail.com)
 
