@@ -9,7 +9,7 @@
 - Официальный репозиторий находится [*здесь*](https://github.com/Aircoookie/WLED).
 - Официальный сайт проекта WLED находится [*здесь*](https://kno.wled.ge/).
 - Официальные стабильные двоичные релизы ***v0.12.0*** находится [*здесь*](https://github.com/Aircoookie/WLED/releases/tag/v0.12.0).
-- **Русскоязычные** стабильные двоичные релизы ***v0.12.0*** находится [*здесь*](https://github.com/S-LABc/WLED-RU/releases).
+- **Русскоязычные** стабильные двоичные релизы ***v0.12.0*** находится [*здесь*](https://github.com/S-LABc/WLED-RU/releases/tag/v0.12.0-ru).
 - Программа для записи прошивки в микроконтроллер [Flash Download Tools](https://www.espressif.com/en/support/download/other-tools). Или можно прошивать через [PlatformIO](https://platformio.org/) как это и было задумано. **Прошивка через OTA тоже работает**, все работает как и в оригинальной.
 
 Если нужно связаться со мной [romansklyar15@gmail.com](mailto:romansklyar15@gmail.com)
@@ -24,8 +24,8 @@
 
 - [wled00/data/**404.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/404.htm) @ Ошибка 404
 - [wled00/data/**edit.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/edit.htm)
-- [wled00/data/**index.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/index.js) @ Главное окно
-- [wled00/data/**index.js**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/index.htm) @ Интерфес и собщения
+- [wled00/data/**index.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/index.htm) @ Главное окно
+- [wled00/data/**index.js**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/index.js) @ Интерфес и собщения
 - [wled00/data/**jsontest.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/jsontest.htm)
 - [wled00/data/**msg.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/msg.htm)
 - [wled00/data/**settings.htm**](https://github.com/S-LABc/WLED-RU/blob/main/wled00/data/settings.htm) @ Перечень настроек
