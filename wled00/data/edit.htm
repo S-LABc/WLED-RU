@@ -236,7 +236,7 @@ function createFileUploader(element, tree, editor){
 
   function httpPostProcessRequest(status, responseText){
     if(status != 200)
-      alert("ERROR "+status+": "+responseText);
+      alert("ОШИБКА "+status+": "+responseText);
     else
       tree.refreshPath(path.value);
   }
@@ -307,13 +307,13 @@ function createTree(element, editor){
     var action = ce("li");
     list.appendChild(action);
     if(isImageFile(path)){
-      action.innerHTML = "<span>Preview</span>";
+      action.innerHTML = "<span>Предпросмотр</span>";
       action.onclick = function(e){
         loadPreview(path);
         if(document.body.getElementsByClassName('cm').length > 0) document.body.removeChild(el);
       };
     } else if(isTextFile(path)){
-      action.innerHTML = "<span>Edit</span>";
+      action.innerHTML = "<span>Редактировать</span>";
       action.onclick = function(e){
         editor.loadUrl(path);
         if(document.body.getElementsByClassName('cm').length > 0) document.body.removeChild(el);
@@ -321,14 +321,14 @@ function createTree(element, editor){
     }
     var download = ce("li");
     list.appendChild(download);
-    download.innerHTML = "<span>Download</span>";
+    download.innerHTML = "<span>Загрузить</span>";
     download.onclick = function(e){
       loadDownload(path);
       if(document.body.getElementsByClassName('cm').length > 0) document.body.removeChild(el);
     };
     var delFile = ce("li");
     list.appendChild(delFile);
-    delFile.innerHTML = "<span>Delete</span>";
+    delFile.innerHTML = "<span>Удалить</span>";
     delFile.onclick = function(e){
       httpDelete(path);
       if(document.body.getElementsByClassName('cm').length > 0) document.body.removeChild(el);
@@ -433,7 +433,7 @@ function createTree(element, editor){
   function delCb(path){
     return function(status, responseText){
       if(status != 200){
-        alert("ERROR "+status+": "+responseText);
+        alert("Ошибка "+status+": "+responseText);
       } else {
         treeRoot.removeChild(treeRoot.childNodes[0]);
         httpGet(treeRoot, "/");
@@ -504,7 +504,7 @@ function createEditor(element, file, lang, theme, type){
 
   var editor = ace.edit(element);
   function httpPostProcessRequest(status, responseText){
-    if(status != 200) alert("ERROR "+status+": "+responseText);
+    if(status != 200) alert("Ошибка "+status+": "+responseText);
   }
   function httpPost(filename, data, type){
     var formData = new FormData();

@@ -43,10 +43,10 @@
       Версия установленной прошивки: ##VERSION##<br>
       Скачайте последнюю версию прошивки: <a href="https://github.com/Aircoookie/WLED/releases" target="_blank">
       <img src="https://img.shields.io/github/release/Aircoookie/WLED.svg?style=flat-square"></a><br>
-      <input type='file' class="bt" name='update' accept=".bin" required><br>
+      <input type='file' class="bt" name='update' required><br> <!--should have accept='.bin', but it prevents file upload from android app-->
       <input type='submit' class="bt" value='Обновить!' ><br>
       <button type="button" class="bt" onclick="B()">Назад</button></form>
-    <div id="msg"><b>Обновление...</b><br>Пожалуйста, не закрывайте и не обновляйте страницу :)</div>
+    <div id="msg"><b>Обновляюсь...</b><br>Пожалуйста, не закрывайте и не перезагружайте страницу :)</div>
 </body>
 
 </html>

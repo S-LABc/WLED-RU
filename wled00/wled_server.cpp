@@ -15,6 +15,26 @@ bool isIp(String str) {
   return true;
 }
 
+void handleUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final){
+  if (otaLock) {
+    if (final) request->send(500, "text/plain", F("Пожалуйста, разблокируйте режим обновления через OTA в настройках безопасности!"));
+    return;
+  }
+  if(!index){
+    request->_tempFile = WLED_FS.open(filename, "w");
+    DEBUG_PRINT("Uploading ");
+    DEBUG_PRINTLN(filename);
+    if (filename == "/presets.json") presetsModifiedTime = toki.second();
+  }
+  if (len) {
+    request->_tempFile.write(data,len);
+  }
+  if(final){
+    request->_tempFile.close();
+    request->send(200, "text/plain", F("Файл загружен!"));
+  }
+}
+
 bool captivePortal(AsyncWebServerRequest *request)
 {
   if (ON_STA_FILTER(request)) return false; //only serve captive in AP mode
@@ -70,7 +90,7 @@ void initServer()
   });
   
   server.on("/reset", HTTP_GET, [](AsyncWebServerRequest *request){
-    serveMessage(request, 200,F("Rebooting now..."),F("Please wait ~10 seconds..."),129);
+    serveMessage(request, 200,F("Перезагружаюсь..."),F("Пожалуйста, подождите примерно 10 секунд..."),129);
     doReboot = true;
   });
   
@@ -84,19 +104,41 @@ void initServer()
 
   AsyncCallbackJsonWebHandler* handler = new AsyncCallbackJsonWebHandler("/json", [](AsyncWebServerRequest *request) {
     bool verboseResponse = false;
+    bool isConfig = false;
     { //scope JsonDocument so it releases its buffer
-      DynamicJsonDocument jsonBuffer(JSON_BUFFER_SIZE);
-      DeserializationError error = deserializeJson(jsonBuffer, (uint8_t*)(request->_tempObject));
-      JsonObject root = jsonBuffer.as<JsonObject>();
+      #ifdef WLED_USE_DYNAMIC_JSON
+      DynamicJsonDocument doc(JSON_BUFFER_SIZE);
+      #else
+      if (!requestJSONBufferLock(14)) return;
+      #endif
+
+      DeserializationError error = deserializeJson(doc, (uint8_t*)(request->_tempObject));
+      JsonObject root = doc.as<JsonObject>();
       if (error || root.isNull()) {
-        request->send(400, "application/json", F("{\"error\":9}")); return;
+        releaseJSONBufferLock();
+        request->send(400, "application/json", F("{\"error\":9}"));
+        return;
       }
-      fileDoc = &jsonBuffer;
-      verboseResponse = deserializeState(root);
-      fileDoc = nullptr;
+      const String& url = request->url();
+      isConfig = url.indexOf("cfg") > -1;
+      if (!isConfig) {
+        #ifdef WLED_DEBUG
+          DEBUG_PRINTLN(F("Serialized HTTP"));
+          serializeJson(root,Serial);
+          DEBUG_PRINTLN();
+        #endif
+        verboseResponse = deserializeState(root);
+      } else {
+        verboseResponse = deserializeConfig(root); //use verboseResponse to determine whether cfg change should be saved immediately
+      }
+      releaseJSONBufferLock();
     }
-    if (verboseResponse) { //if JSON contains "v"
-      serveJson(request); return; 
+    if (verboseResponse) {
+      if (!isConfig) {
+        serveJson(request); return; //if JSON contains "v"
+      } else {
+        serializeConfig(); //Save new settings to FS
+      }
     } 
     request->send(200, "application/json", F("{\"success\":true}"));
   });
@@ -118,14 +160,20 @@ void initServer()
     request->send_P(200, "text/html", PAGE_usermod);
     });
     
+  //Deprecated, use of /json/state and presets recommended instead
   server.on("/url", HTTP_GET, [](AsyncWebServerRequest *request){
     URL_response(request);
     });
     
   server.on("/teapot", HTTP_GET, [](AsyncWebServerRequest *request){
-    serveMessage(request, 418, F("418. I'm a teapot."), F("(Tangible Embedded Advanced Project Of Twinkling)"), 254);
+    serveMessage(request, 418, F("418. Я чайник."), F("(Осязаемый Встроенный Расширенный Проект Мерцания)"), 254);
     });
-    
+
+  server.on("/upload", HTTP_POST, [](AsyncWebServerRequest *request) {},
+        [](AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data,
+                      size_t len, bool final) {handleUpload(request, filename, index, data, len, final);}
+  );
+
   //if OTA is allowed
   if (!otaLock){
     #ifdef WLED_ENABLE_FS_EDITOR
@@ -136,7 +184,7 @@ void initServer()
      #endif
     #else
     server.on("/edit", HTTP_GET, [](AsyncWebServerRequest *request){
-      serveMessage(request, 501, "Not implemented", F("The FS editor is disabled in this build."), 254);
+      serveMessage(request, 501, "Не реализовано", F("В этой сборке прошивки не включен редактор файловой системы."), 254);
     });
     #endif
     //init ota page
@@ -148,9 +196,9 @@ void initServer()
     server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
       if (Update.hasError())
       {
-        serveMessage(request, 500, F("Failed updating firmware!"), F("Please check your file and retry!"), 254); return;
+        serveMessage(request, 500, F("Ошибка обновления!"), F("Пожалуйста, проверьте файл и повторите попытку!"), 254); return;
       }
-      serveMessage(request, 200, F("Successfully updated firmware!"), F("Please wait while the module reboots..."), 131); 
+      serveMessage(request, 200, F("Обновление выполнено!"), F("Перезагружаюсь..."), 131); 
       doReboot = true;
     },[](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
       if(!index){
@@ -172,29 +220,29 @@ void initServer()
     
     #else
     server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
-      serveMessage(request, 501, "Not implemented", F("OTA updates are disabled in this build."), 254);
+      serveMessage(request, 501, "Не реализовано", F("В этой сборке прошивки не включена поддержка обновления через OTA."), 254);
     });
     #endif
   } else
   {
     server.on("/edit", HTTP_GET, [](AsyncWebServerRequest *request){
-      serveMessage(request, 500, "Access Denied", F("Please unlock OTA in security settings!"), 254);
+      serveMessage(request, 500, "Отказано в доступе", F("Пожалуйста, разблокируйте режим обновления через OTA в настройках безопасности!"), 254);
     });
     server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
-      serveMessage(request, 500, "Access Denied", F("Please unlock OTA in security settings!"), 254);
+      serveMessage(request, 500, "Отказано в доступе", F("Пожалуйста, разблокируйте режим обновления через OTA в настройках безопасности!"), 254);
     });
   }
 
 
-    #ifdef WLED_ENABLE_DMX
-    server.on("/dmxmap", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send_P(200, "text/html", PAGE_dmxmap     , dmxProcessor);
-    });
-    #else
-    server.on("/dmxmap", HTTP_GET, [](AsyncWebServerRequest *request){
-      serveMessage(request, 501, "Not implemented", F("DMX support is not enabled in this build."), 254);
-    });
-    #endif
+  #ifdef WLED_ENABLE_DMX
+  server.on("/dmxmap", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/html", PAGE_dmxmap     , dmxProcessor);
+  });
+  #else
+  server.on("/dmxmap", HTTP_GET, [](AsyncWebServerRequest *request){
+    serveMessage(request, 501, "Не реализовано", F("В этой сборке прошивки не включена поддержка DMX."), 254);
+  });
+  #endif
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     if (captivePortal(request)) return;
     serveIndexOrWelcome(request);
@@ -213,7 +261,10 @@ void initServer()
     //make API CORS compatible
     if (request->method() == HTTP_OPTIONS)
     {
-      request->send(200); return;
+      AsyncWebServerResponse *response = request->beginResponse(200);
+      response->addHeader(F("Access-Control-Max-Age"), F("7200"));
+      request->send(response);
+      return;
     }
     
     if(handleSet(request, request->url())) return;
@@ -247,7 +298,13 @@ bool handleIfNoneMatchCacheHeader(AsyncWebServerRequest* request)
 
 void setStaticContentCacheHeaders(AsyncWebServerResponse *response)
 {
+  #ifndef WLED_DEBUG
+  //this header name is misleading, "no-cache" will not disable cache,
+  //it just revalidates on every load using the "If-None-Match" header with the last ETag value
   response->addHeader(F("Cache-Control"),"no-cache");
+  #else
+  response->addHeader(F("Cache-Control"),"no-store,max-age=0"); // prevent caching if debug build
+  #endif
   response->addHeader(F("ETag"), String(VERSION));
 }
 
@@ -261,7 +318,6 @@ void serveIndex(AsyncWebServerRequest* request)
 
   response->addHeader(F("Content-Encoding"),"gzip");
   setStaticContentCacheHeaders(response);
-  
   request->send(response);
 }
 
@@ -289,10 +345,10 @@ String msgProcessor(const String& var)
       messageBody += F(")</script>");
     } else if (optt == 253)
     {
-      messageBody += F("<br><br><form action=/settings><button class=\"bt\" type=submit>Back</button></form>"); //button to settings
+      messageBody += F("<br><br><form action=/settings><button class=\"bt\" type=submit>Назад</button></form>"); //button to settings
     } else if (optt == 254)
     {
-      messageBody += F("<br><br><button type=\"button\" class=\"bt\" onclick=\"B()\">Back</button>");
+      messageBody += F("<br><br><button type=\"button\" class=\"bt\" onclick=\"B()\">Назад</button>");
     }
     return messageBody;
   }
@@ -313,15 +369,17 @@ void serveMessage(AsyncWebServerRequest* request, uint16_t code, const String& h
 String settingsProcessor(const String& var)
 {
   if (var == "CSS") {
-    char buf[2048];
+    char buf[SETTINGS_STACK_BUF_SIZE];
+    buf[0] = 0;
     getSettingsJS(optionType, buf);
+    //Serial.println(uxTaskGetStackHighWaterMark(NULL));
     return String(buf);
   }
   
   #ifdef WLED_ENABLE_DMX
 
   if (var == "DMXMENU") {
-    return String(F("<form action=/settings/dmx><button type=submit>DMX Output</button></form>"));
+    return String(F("<form action=/settings/dmx><button type=submit>Выход DMX</button></form>"));
   }
   
   #endif
@@ -337,7 +395,7 @@ String dmxProcessor(const String& var)
       mapJS += "\nCN=" + String(DMXChannels) + ";\n";
       mapJS += "CS=" + String(DMXStart) + ";\n";
       mapJS += "CG=" + String(DMXGap) + ";\n";
-      mapJS += "LC=" + String(ledCount) + ";\n";
+      mapJS += "LC=" + String(strip.getLengthTotal()) + ";\n";
       mapJS += "var CH=[";
       for (int i=0;i<15;i++) {
         mapJS += String(DMXFixtureMap[i]) + ",";
@@ -365,31 +423,33 @@ void serveSettings(AsyncWebServerRequest* request, bool post)
     #ifdef WLED_ENABLE_DMX // include only if DMX is enabled
     else if (url.indexOf("dmx")  > 0) subPage = 7;
     #endif
+    else if (url.indexOf("um")  > 0) subPage = 8;
   } else subPage = 255; //welcome page
 
   if (subPage == 1 && wifiLock && otaLock)
   {
-    serveMessage(request, 500, "Access Denied", F("Please unlock OTA in security settings!"), 254); return;
+    serveMessage(request, 500, "Отказано в доступе", F("Пожалуйста, разблокируйте режим обновления через OTA в настройках безопасности!"), 254); return;
   }
 
   if (post) { //settings/set POST request, saving
     if (subPage != 1 || !(wifiLock && otaLock)) handleSettingsSet(request, subPage);
 
-    char s[32];
-    char s2[45] = "";
+    char s[65]; //32
+    char s2[105] = ""; //45
 
     switch (subPage) {
-      case 1: strcpy_P(s, PSTR("WiFi")); strcpy_P(s2, PSTR("Please connect to the new IP (if changed)")); forceReconnect = true; break;
-      case 2: strcpy_P(s, PSTR("LED")); break;
-      case 3: strcpy_P(s, PSTR("UI")); break;
-      case 4: strcpy_P(s, PSTR("Sync")); break;
-      case 5: strcpy_P(s, PSTR("Time")); break;
-      case 6: strcpy_P(s, PSTR("Security")); strcpy_P(s2, PSTR("Rebooting, please wait ~10 seconds...")); break;
-      case 7: strcpy_P(s, PSTR("DMX")); break;
+      case 1: strcpy_P(s, PSTR("Настройки WiFi сохранены.")); strcpy_P(s2, PSTR("Пожалуйста, подключитесь к новому IP (если он изменился)")); forceReconnect = true; break; //Please connect to the new IP (if changed)
+      case 2: strcpy_P(s, PSTR("Настройки светодиодов сохранены.")); break;
+      case 3: strcpy_P(s, PSTR("Настройки интерфейса сохранены.")); break;
+      case 4: strcpy_P(s, PSTR("Настройки синхронизации сохранены.")); break;
+      case 5: strcpy_P(s, PSTR("Настройки времени сохранены.")); break;
+      case 6: strcpy_P(s, PSTR("Настройки безопасности сохранены.")); strcpy_P(s2, PSTR("Перезагружаюсь, подождите примерно 10 секунд...")); break; //Rebooting, please wait ~10 seconds...
+      case 7: strcpy_P(s, PSTR("Настройки DMX сохранены.")); break;
+      case 8: strcpy_P(s, PSTR("Настройки расширений сохранены.")); break;
     }
 
-    strcat_P(s, PSTR(" settings saved."));
-    if (!s2[0]) strcpy_P(s2, PSTR("Redirecting..."));
+    //strcat_P(s, PSTR(" settings saved."));
+    if (!s2[0]) strcpy_P(s2, PSTR("Перенаправление..."));
 
     if (!doReboot) serveMessage(request, 200, s, s2, (subPage == 1 || subPage == 6) ? 129 : 1);
     if (subPage == 6) doReboot = true;
@@ -412,6 +472,7 @@ void serveSettings(AsyncWebServerRequest* request, bool post)
     case 5:   request->send_P(200, "text/html", PAGE_settings_time, settingsProcessor); break;
     case 6:   request->send_P(200, "text/html", PAGE_settings_sec , settingsProcessor); break;
     case 7:   request->send_P(200, "text/html", PAGE_settings_dmx , settingsProcessor); break;
+    case 8:   request->send_P(200, "text/html", PAGE_settings_um  , settingsProcessor); break;
     case 255: request->send_P(200, "text/html", PAGE_welcome); break;
     default:  request->send_P(200, "text/html", PAGE_settings     , settingsProcessor); 
   }

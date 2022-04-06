@@ -1,48 +1,99 @@
 <!DOCTYPE html>
 <html lang="ru"><head><meta name="viewport" content="width=500"><meta charset="utf-8"><title>Настройки синхронизации</title>
 <script>var d=document;
-function H(){window.open("https://github.com/Aircoookie/WLED/wiki/Settings#sync-settings");}function B(){window.open("/settings","_self");}
+function gId(s)
+{
+  return d.getElementById(s);
+}
+function H(){window.open("https://kno.wled.ge/interfaces/udp-notifier/");}
+function B(){window.open("/settings","_self");}
 function adj(){if (d.Sf.DI.value == 6454) {if (d.Sf.DA.value == 1) d.Sf.DA.value = 0; if (d.Sf.EU.value == 1) d.Sf.EU.value = 0;}
                else if (d.Sf.DI.value == 5568) {if (d.Sf.DA.value == 0) d.Sf.DA.value = 1; if (d.Sf.EU.value == 0) d.Sf.EU.value = 1;} }
-function SP(){var p = d.Sf.DI.value; d.getElementById("xp").style.display = (p > 0)?"none":"block"; if (p > 0) d.Sf.EP.value = p;}
-function SetVal(){switch(parseInt(d.Sf.EP.value)){case 5568: d.Sf.DI.value = 5568; break; case 6454: d.Sf.DI.value = 6454; break; case 4048: d.Sf.DI.value = 4048; break; }; SP();}
+function FC()
+{
+  for(j=0;j<8;j++)
+  {
+    gId("G"+(j+1)).checked=gId("GS").value>>j&1;
+    gId("R"+(j+1)).checked=gId("GR").value>>j&1;
+  }
+}
+function GC()
+{
+  var a=0, b=0;
+
+  var m=1;
+  for(j=0;j<8;j++)
+  {
+    a+=gId("G"+(j+1)).checked*m;
+    b+=gId("R"+(j+1)).checked*m;
+    m*=2;
+  }
+  gId("GS").value=a;
+  gId("GR").value=b;
+}
+function SP(){var p = d.Sf.DI.value; gId("xp").style.display = (p > 0)?"none":"block"; if (p > 0) d.Sf.EP.value = p;}
+function SetVal(){switch(parseInt(d.Sf.EP.value)){case 5568: d.Sf.DI.value = 5568; break; case 6454: d.Sf.DI.value = 6454; break; case 4048: d.Sf.DI.value = 4048; break; }; SP();FC();}
 function S(){GetV();SetVal();}
 function GetV(){var d=document;}
 </script>
 <style>@import url("style.css");</style></head>
 <body onload="S()">
-<form id="form_s" name="Sf" method="post">
+<form id="form_s" name="Sf" method="post" onsubmit="GC()">
 <div class="helpB"><button type="button" onclick="H()">?</button></div>
 <button type="button" onclick="B()">Назад</button><button type="submit">Сохранить</button><hr>
 <h2>Настройка синхронизации</h2>
-<h3>Настройка кнопок</h3>
-Задействовать кнопку Вкл/Выкл: <input type="checkbox" name="BT"><br>
-ИК-пульт:
-<select name=IR>
-<option value=0>Отключено</option>
-<option value=1>24 кнопки (RGB)</option>
-<option value=2>24 кнопки (с CT)</option>
-<option value=3>40 кнопок (синий)</option>
-<option value=4>44 кнопки (RGB)</option>
-<option value=5>21 кнопка (RGB)</option>
-<option value=6>6 кнопок (черный)</option>
-<option value=7>9 кнопок (красный)</option>
-</select><br>
-<a href="https://github.com/Aircoookie/WLED/wiki/Infrared-Control" target="_blank">Информация об ИК-пультах</a>
 <h3>WLED-трансляция</h3>
 Порт UDP: <input name="UP" type="number" min="1" max="65535" class="d5" required><br>
-Второй порт: <input name="U2" type="number" min="1" max="65535" class="d5" required><br>
-Принимать: <input type="checkbox" name="RB">Яркость, <input type="checkbox" name="RC">Цвет, <input type="checkbox" name="RX">Эффекты<br>
-Отправлять уведомления об изменении: <input type="checkbox" name="SD"><br>
+Второй порт: <input name="U2" type="number" min="1" max="65535" class="d5" required><br><br>
+<input name="GS" id="GS" type="number" style="display: none;"> <!-- hidden inputs for bitwise group checkboxes -->
+<input name="GR" id="GR" type="number" style="display: none;">
+<table style="margin: 0 auto;">
+    <tr>
+        <td>Группы синхронизации</td>
+        <td>1</td>
+        <td>2</td>
+        <td>3</td>
+        <td>4</td>
+        <td>5</td>
+        <td>6</td>
+        <td>7</td>
+        <td>8</td>
+    </tr>
+    <tr>
+        <td>Передача:</td>
+        <td><input type="checkbox" id="G1" name="G1"></td>
+        <td><input type="checkbox" id="G2" name="G2"></td>
+        <td><input type="checkbox" id="G3" name="G3"></td>
+        <td><input type="checkbox" id="G4" name="G4"></td>
+        <td><input type="checkbox" id="G5" name="G5"></td>
+        <td><input type="checkbox" id="G6" name="G6"></td>
+        <td><input type="checkbox" id="G7" name="G7"></td>
+        <td><input type="checkbox" id="G8" name="G8"></td>
+    </tr>
+    <tr>
+        <td>Приём:</td>
+        <td><input type="checkbox" id="R1" name="R1"></td>
+        <td><input type="checkbox" id="R2" name="R2"></td>
+        <td><input type="checkbox" id="R3" name="R3"></td>
+        <td><input type="checkbox" id="R4" name="R4"></td>
+        <td><input type="checkbox" id="R5" name="R5"></td>
+        <td><input type="checkbox" id="R6" name="R6"></td>
+        <td><input type="checkbox" id="R7" name="R7"></td>
+        <td><input type="checkbox" id="R8" name="R8"></td>
+    </tr>
+</table><br>
+Принимать: <input type="checkbox" name="RB"> Яркость, <input type="checkbox" name="RC"> Цвет, <input type="checkbox" name="RX"> Эффекты<br>
+<input type="checkbox" name="SO"> Параметры сегмента, <input type="checkbox" name="SG"> Границы<br>
+Отправлять уведомления о прямом изменении: <input type="checkbox" name="SD"><br>
 Отправлять уведомления при нажатии кнопки или работе ИК-пульта: <input type="checkbox" name="SB"><br>
 Отправлять уведомления Alexa: <input type="checkbox" name="SA"><br>
 Отправлять уведомления об изменении Philips Hue: <input type="checkbox" name="SH"><br>
-Отправлять уведомления о Макро: <input type="checkbox" name="SM"><br>
+Отправлять уведомления о макропресетах: <input type="checkbox" name="SM"><br>
 Отправлять уведомления дважды: <input type="checkbox" name="S2"><br>
 <i>Для применения изменений потребуется перезагрузка. </i>
 <h3>Список узлов</h3>
 Включить список узлов: <input type="checkbox" name="NL"><br>
-Сделать этот узел доступным для обнаружения: <input type="checkbox" name="NB"><br>
+Сделать этот узел доступным для обнаружения: <input type="checkbox" name="NB">
 <h3>Реальное время</h3>
 Получать UDP в реальном времени: <input type="checkbox" name="RD"><br><br>
 <i>Сетевой вход DMX</i><br>
@@ -50,18 +101,17 @@ function GetV(){var d=document;}
 <select name=DI onchange="SP(); adj();">
 <option value=5568>E1.31 (sACN)</option>
 <option value=6454>Art-Net</option>
-<option value=4048>DDP</option>
-<option value=0 selected>Пользовательский порт</option>
+<option value=0 selected>Указать порт</option>
 </select><br>
 <div id=xp>Порт: <input name="EP" type="number" min="1" max="65535" value="5568" class="d5" required><br></div>
 Многоадресная рассылка: <input type="checkbox" name="EM"><br>
 Начать вселенную с: <input name="EU" type="number" min="0" max="63999" required><br>
-<i>Потребуется перезагрузка.</i> Проверьте <a href="https://github.com/LedFx/LedFx" target="_blank">LedFx</a>!<br>
+<i>Потребуется перезагрузка.</i> Посмотрите <a href="https://github.com/LedFx/LedFx" target="_blank">LedFx</a>!<br>
 Пропускать неупорядоченные пакеты: <input type="checkbox" name="ES"><br>
 Начальный адрес DMX: <input name="DA" type="number" min="0" max="510" required><br>
 Режим DMX:
 <select name=DM>
-<option value=0>Выключен</option>
+<option value=0>Выключено</option>
 <option value=1>Одиночный RGB</option>
 <option value=2>Одиночный DRGB</option>
 <option value=3>Эффект</option>
@@ -69,48 +119,63 @@ function GetV(){var d=document;}
 <option value=5>Диммер + Мульти RGB</option>
 <option value=6>Мульти RGBW</option>
 </select><br>
-<a href="https://github.com/Aircoookie/WLED/wiki/E1.31-DMX" target="_blank">Информация о E1.31</a><br>
+<a href="https://kno.wled.ge/interfaces/e1.31-dmx/" target="_blank">Информация о E1.31</a><br>
 Ожидание: <input name="ET" type="number" min="1" max="65000" required> мс<br>
 Принудительная максимальная яркость: <input type="checkbox" name="FB"><br>
 Отключить гамма-коррекцию в реальном времени: <input type="checkbox" name="RG"><br>
 Смещение светодиода в реальном времени: <input name="WO" type="number" min="-255" max="255" required>
 <h3>Голосовой помошник Alexa</h3>
 Эмулировать устройство Alexa: <input type="checkbox" name="AL"><br>
-Имя вызова Alexa: <input name="AI" maxlength="32">
+Имя вызова Alexa: <input type="text" name="AI" maxlength="32">
 <h3>Blynk</h3>
 <b>Blynk, MQTT и Hue синхронизируются, и подключаются к внешним хостам!<br>
 Это может повлиять на отзывчивость ESP8266.</b><br>
 Для достижения наилучших результатов используйте одновременно только один сервис.<br>
-(как вариант, подключите к ним второй ESP и используйте синхронизацию UDP.)<br><br>
-Хост: <input name="BH" maxlength="32">
+(как вариант, подключите сервисы на другие ESP и используйте синхронизацию UDP)<br><br>
+Хост: <input type="text" name="BH" maxlength="32">
 Порт: <input name="BP" type="number" min="1" max="65535" value="80" class="d5"><br>
 Токен аутентификации устройства: <input name="BK" maxlength="33"><br>
-<i>Чтобы отключить, очистите поле токена. </i><a href="https://github.com/Aircoookie/WLED/wiki/Blynk" target="_blank">Информация о Blynk</a>
+<i>Чтобы отключить, очистите поле токена. </i><a href="https://kno.wled.ge/interfaces/blynk/" target="_blank">Информация о Blynk</a>
 <h3>MQTT</h3>
 Включить MQTT: <input type="checkbox" name="MQ"><br>
-Брокер: <input name="MS" maxlength="32">
+Брокер: <input type="text" name="MS" maxlength="32">
 Порт: <input name="MQPORT" type="number" min="1" max="65535" class="d5"><br>
-<b>Учетные данные MQTT отправляются по незащищенному соединению.<br>
+<b>Учетные данные MQTT отправляются по незащищённому соединению.<br>
 Никогда не используйте пароль MQTT для другого сервиса!</b><br>
-Имя пользователя: <input name="MQUSER" maxlength="40"><br>
-Пароль: <input type="password" name="MQPASS" maxlength="40"><br>
-ID клиента: <input name="MQCID" maxlength="40"><br>
-Тема устройства: <input name="MD" maxlength="32"><br>
-Тема группы: <input name="MG" maxlength="32"><br>
-<i>Для применения изменений потребуется перезагрузка. </i><a href="https://github.com/Aircoookie/WLED/wiki/MQTT" target="_blank">Информация о MQTT</a>
+Имя пользователя: <input type="text" name="MQUSER" maxlength="40"><br>
+Пароль: <input type="password" name="MQPASS" maxlength="64"><br>
+ID клиента: <input type="text" name="MQCID" maxlength="40"><br>
+Тема устройства: <input type="text" name="MD" maxlength="32"><br>
+Тема группы: <input type="text" name="MG" maxlength="32"><br>
+Публиковать по нажатию кнопки: <input type="checkbox" name="BM"><br>
+<i>Для применения изменений потребуется перезагрузка. </i><a href="https://kno.wled.ge/interfaces/mqtt/" target="_blank">Информация о MQTT</a>
 <h3>Philips Hue</h3>
 <i>Вы можете найти IP-адрес моста и номер источника освещения в разделе «О программе» приложения Hue.</i><br>
 Опрос Hue-светильника <input name="HL" type="number" min="1" max="99" > каждые <input name="HI" type="number" min="100" max="65000"> мс: <input type="checkbox" name="HP"><br>
 Принимать: <input type="checkbox" name="HO"> Вкл/Выкл, <input type="checkbox" name="HB"> Яркость, <input type="checkbox" name="HC"> Цвет<br>
 Hue IP-мост:<br>
-<input name="H0" type="number" min="0" max="255" > .
-<input name="H1" type="number" min="0" max="255" > .
-<input name="H2" type="number" min="0" max="255" > .
-<input name="H3" type="number" min="0" max="255" ><br>
-<b>Нажмите кнопку в приложении, затем сохраните эту страницу!</b><br>
+<input name="H0" type="number" class="s" min="0" max="255" > .
+<input name="H1" type="number" class="s" min="0" max="255" > .
+<input name="H2" type="number" class="s" min="0" max="255" > .
+<input name="H3" type="number" class="s" min="0" max="255" ><br>
+<b>Нажмите кнопку ссылки на мост в приложении, после чего сохраните эту страницу!</b><br>
 (при первом подключении)<br>
-Hue статус: <span class="sip"> Отключено в данной сборке </span><hr>
-<button type="button" onclick="B()">Назд</button><button type="submit">Сохранить</button>
+Hue статус: <span class="sip"> Отключено в этой сборке </span>
+<h3>Последовательный порт</h3>
+Скорость:
+<select name=BD>
+<option value=1152>115200</option>
+<option value=2304>230400</option>
+<option value=4608>460800</option>
+<option value=5000>500000</option>
+<option value=5760>576000</option>
+<option value=9216>921600</option>
+<option value=10000>1000000</option>
+<option value=15000>1500000</option>
+</select><br>
+<i>Придерживайтесь скорости 115200. Некоторые модули могут не поддерживать высокие скорости.</i>
+<hr>
+<button type="button" onclick="B()">Назад</button><button type="submit">Сохранить</button>
 </form>
 </body>
 </html>

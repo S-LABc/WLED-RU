@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head lang="ru">
-  <meta charset="utf-8">
+	<meta charset="utf-8">
 	<meta name="viewport" content="width=500">
 	<title>Настройки интерфейса пользователя</title>
 	<script>
@@ -10,16 +10,19 @@
 		var sett = null;
 		var l = {
 			"comp":{
-			"labels":"Показывать подписи к кнопкам",
-			"colors":{
-				"LABEL":"Способы выбора цвета",
-				"picker": "Цветовой круг",
-				"rgb": "Ползунки RGB",
-				"quick": "Шаблон цветов",
-				"hex": "Выбор цвета HEX"
-			},
-      "pcmbot": "Показывать нижнюю панель в режиме ПК",
-      "pid": "Показывать ID пресетов"
+				"labels":"Показывать подписи к кнопкам",
+				"colors":{
+					"LABEL":"Способы выбора цвета",
+					"picker": "Цветовой круг",
+					"rgb": "Ползунки RGB",
+					"quick": "Шаблон цветов",
+					"hex": "HEX формат"
+					},
+				"pcmbot": "Показывать нижнюю панель в режиме ПК",
+				"pid": "Показывать ID пресетов",
+				"seglen": "Установить длину сегмента вместо конечного светодиода",
+        "css": "Включить пользовательский CSS",
+        "hdays": "Включить пользовательский список праздников"
 			},
 			"theme":{
 				"alpha": {
@@ -28,13 +31,12 @@
 				},
 				"bg":{
 					"url":"URL картинки фона",
-					"random":"Случайное изображение для фона"
+					"random":"Случайное изображение фона"
 				},
 				"color":{
-					"bg":"Цвет фона HEX"
+					"bg":"Цвет фона в формате HEX"
 				}
 			}
-			
 		};
 		function gId(s)
 		{
@@ -52,10 +54,18 @@
 				if( !tar[elem] ) tar[elem] = {}
 				tar = tar[elem];
 			}
-
 			tar[pList[len-1]] = val;
 		}
-
+		var timeout;
+		function showToast(text, error = false)
+		{
+			var x = gId("toast");
+			x.innerHTML = text;
+			x.className = error ? "error":"show";
+			clearTimeout(timeout);
+			x.style.animation = 'none';
+			timeout = setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2900);
+		}
 		function addRec(s, path = "", label = null)
 		{
 			var str = "";
@@ -113,7 +123,7 @@
 			} catch (e) {
 				sett = {};
 				gId('lserr').style.display = "inline";
-				gId('lserr').innerHTML = "&#9888; Settings JSON parsing failed. (" + e + ")";
+				gId('lserr').innerHTML = "&#9888; Не удалось выполнить анализ настроек JSON. (" + e + ")";
 			}
 			genForm(sett);
 			gId('dm').checked = (gId('theme_base').value === 'light');
@@ -134,7 +144,7 @@
 			} catch (e) {
 				gId('lssuc').style.display = "none";
 				gId('lserr').style.display = "inline";
-				gId('lserr').innerHTML = "&#9888; Settings JSON saving failed. (" + e + ")";
+				gId('lserr').innerHTML = "&#9888; Не удалось сохранить настройки JSON. (" + e + ")";
 			}
 		}
 		
@@ -181,44 +191,56 @@
 				gId("theme_bg_random").checked = false;
 			}
 		}
-
-		function GetV()
-		{
-		}
+		function uploadFile(fO,name) {
+			var req = new XMLHttpRequest();
+			req.addEventListener('load', function(){showToast(this.responseText,this.status >= 400)});
+			req.addEventListener('error', function(e){showToast(e.stack,true);});
+			req.open("POST", "/upload");
+			var formData = new FormData();
+			formData.append("data", fO.files[0], name);
+			req.send(formData);
+			fO.value = '';
+			return false;
+	    }
+		function GetV(){var d=document;}
 	</script>
-	<style>
-		@import url("style.css");
-	</style>
+	<style>@import url("style.css");</style>
 </head>
 <body onload="S()">
 	<form id="form_s" name="Sf" method="post">
-		<div style="position:sticky;top:0;background-color:#222;">
+		<div style="position:sticky;top:0;background-color:#222;z-index:1;">
 		<div class="helpB"><button type="button" onclick="H()">?</button></div>
 		<button type="button" onclick="B()">Назад</button><button type="button" onclick="Save()">Сохранить</button><br>
-		<span id="lssuc" style="color:green; display:none">&#10004; Настройки локального интерфейса пользователя сохранены!</span>
-		<span id="lserr" style="color:red; display:none">&#9888; Не удалось получить доступ к локальному хранилищу. Убедитесь, что он включен в вашем браузере.</span><hr>
+		<span id="lssuc" style="color:green; display:none">&#10004; Локальные настройки интерфейса пользователя сохранены!</span>
+		<span id="lserr" style="color:red; display:none">&#9888; Не удалось получить доступ к локальному хранилищу. Убедитесь, что он разрешён в вашем браузере.</span><hr>
 		</div>
 		<h2>Настройки Web</h2>
 		Описание сервера: <input name="DS" maxlength="32"><br>
-	Кнопка синхронизации для отправки и получения: <input type="checkbox" name="ST"><br>
+    	Кнопка синхронизации переключает отправку и получение: <input type="checkbox" name="ST"><br>
 		<i>Следующие настройки интерфейса пользователя уникальны для этого устройства WLED и для этого браузера.<br>
-		Вам придётся установить их снова, если вы используете другой браузер, устройство, или IP-адрес WLED.<br>
-		Чтобы применить изменения, обновите основной интерфейс.</i><br>
+		Вам придётся установить их снова, если вы будете использовать другие: браузер, устройство, IP-адрес WLED.<br>
+		Чтобы применить изменения, обновите страницу основного интерфейса.</i><br>
 		
 		<div id="gen">Загрузка настроек...</div>
 		
 		<h3>Внешний вид</h3>
 		<span class="l"></span>: <input type="checkbox" id="comp_labels" class="agi cb"><br>
-    <span class="l"></span>: <input type="checkbox" id="comp_pcmbot" class="agi cb"><br>
-    <span class="l"></span>: <input type="checkbox" id="comp_pid" class="agi cb"><br>
-		Я ненавижу темную тему: <input type="checkbox" id="dm" onchange="UI()"><br>
-		<span id="idonthateyou" style="display:none"><i>Ну почему же так? </i>&#x1F97A;<br></span>
+    	<span class="l"></span>: <input type="checkbox" id="comp_pcmbot" class="agi cb"><br>
+    	<span class="l"></span>: <input type="checkbox" id="comp_pid" class="agi cb"><br>
+    	<span class="l"></span>: <input type="checkbox" id="comp_seglen" class="agi cb"><br>
+		Я ненавижу тёмную тему: <input type="checkbox" id="dm" onchange="UI()"><br>
+		<span id="idonthateyou" style="display:none"><i>Ну что же так? </i>&#x1F97A;<br></span>
 		<span class="l"></span>: <input type="number" min=0.0 max=1.0 step=0.01 id="theme_alpha_tab" class="agi"><br>
 		<span class="l"></span>: <input type="number" min=0.0 max=1.0 step=0.01 id="theme_alpha_bg" class="agi"><br>
 		<span class="l"></span>: <input id="theme_color_bg" maxlength="9" class="agi"><br>
 		<span class="l">URL картинки фона</span>: <input id="theme_bg_url" class="agi" oninput="checkRandomBg()"><br>
-		<span class="l">Случайное изображение для фона</span>: <input type="checkbox" id="theme_bg_random" class="agi cb" onchange="setRandomBg()"><br>
+		<span class="l">Случайное изображение фона</span>: <input type="checkbox" id="theme_bg_random" class="agi cb" onchange="setRandomBg()"><br>
 		<input id="theme_base" class="agi" style="display:none">
+    <span class="l"></span>: <input type="checkbox" id="comp_css" class="agi cb"><br>
+		<div id="skin">CSS пользователя: <input type="file" name="data" accept=".css"> <input type="button" value="Отправить" onclick="uploadFile(d.Sf.data,'/skin.css');"><br></div>
+		<span class="l"></span>: <input type="checkbox" id="comp_hdays" class="agi cb"><br>
+    <div id="holidays">Праздники пользователя: <input type="file" name="data2" accept=".json"> <input type="button" value="Отправить" onclick="uploadFile(d.Sf.data2,'/holidays.json');"><br></div>
+		<div id="toast"></div>
 		<hr><button type="button" onclick="B()">Назад</button><button type="button" onclick="Save()">Сохранить</button>
 	</form>
 </body>

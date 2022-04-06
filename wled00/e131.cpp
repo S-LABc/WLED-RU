@@ -34,9 +34,11 @@ void handleDDPPacket(e131_packet_t* p) {
 
   realtimeLock(realtimeTimeoutMs, REALTIME_MODE_DDP);
   
-  for (uint16_t i = start; i < stop; i++) {
-    setRealtimePixel(i, data[c], data[c+1], data[c+2], 0);
-    c+=3;
+  if (!realtimeOverride) {
+    for (uint16_t i = start; i < stop; i++) {
+      setRealtimePixel(i, data[c], data[c+1], data[c+2], 0);
+      c+=3;
+    }
   }
 
   bool push = p->flags & DDP_PUSH_FLAG;
@@ -102,23 +104,24 @@ void handleE131Packet(e131_packet_t* p, IPAddress clientIP, byte protocol){
   // update status info
   realtimeIP = clientIP;
   byte wChannel = 0;
+  uint16_t totalLen = strip.getLengthTotal();
 
   switch (DMXMode) {
     case DMX_MODE_DISABLED:
       return;  // nothing to do
       break;
 
-    case DMX_MODE_SINGLE_RGB:
+    case DMX_MODE_SINGLE_RGB: // RGB only
       if (uni != e131Universe) return;
       if (dmxChannels-DMXAddress+1 < 3) return;
       realtimeLock(realtimeTimeoutMs, mde);
       if (realtimeOverride) return;
       wChannel = (dmxChannels-DMXAddress+1 > 3) ? e131_data[DMXAddress+3] : 0;
-      for (uint16_t i = 0; i < ledCount; i++)
+      for (uint16_t i = 0; i < totalLen; i++)
         setRealtimePixel(i, e131_data[DMXAddress+0], e131_data[DMXAddress+1], e131_data[DMXAddress+2], wChannel);
       break;
 
-    case DMX_MODE_SINGLE_DRGB:
+    case DMX_MODE_SINGLE_DRGB: // Dimmer + RGB
       if (uni != e131Universe) return;
       if (dmxChannels-DMXAddress+1 < 4) return;
       realtimeLock(realtimeTimeoutMs, mde);
@@ -127,15 +130,19 @@ void handleE131Packet(e131_packet_t* p, IPAddress clientIP, byte protocol){
       if (DMXOldDimmer != e131_data[DMXAddress+0]) {
         DMXOldDimmer = e131_data[DMXAddress+0];
         bri = e131_data[DMXAddress+0];
-        strip.setBrightness(bri);
+        strip.setBrightness(bri, true);
       }
-      for (uint16_t i = 0; i < ledCount; i++)
+      for (uint16_t i = 0; i < totalLen; i++)
         setRealtimePixel(i, e131_data[DMXAddress+1], e131_data[DMXAddress+2], e131_data[DMXAddress+3], wChannel);
       break;
 
-    case DMX_MODE_EFFECT:
+    case DMX_MODE_EFFECT: // Length 1: Apply Preset ID, length 11-13: apply effect config
       if (uni != e131Universe) return;
-      if (dmxChannels-DMXAddress+1 < 11) return;
+      if (dmxChannels-DMXAddress+1 < 11) {
+        if (dmxChannels-DMXAddress+1 > 1) return;
+        applyPreset(e131_data[DMXAddress+0], CALL_MODE_NOTIFICATION);
+        return;
+      }
       if (DMXOldDimmer != e131_data[DMXAddress+0]) {
         DMXOldDimmer = e131_data[DMXAddress+0];
         bri = e131_data[DMXAddress+0];
@@ -156,9 +163,9 @@ void handleE131Packet(e131_packet_t* p, IPAddress clientIP, byte protocol){
         col[3]        = e131_data[DMXAddress+11]; //white
         colSec[3]     = e131_data[DMXAddress+12];
       }
-      transitionDelayTemp = 0;                        // act fast
-      colorUpdated(NOTIFIER_CALL_MODE_NOTIFICATION);  // don't send UDP
-      return;                                         // don't activate realtime live mode
+      transitionDelayTemp = 0;               // act fast
+      colorUpdated(CALL_MODE_NOTIFICATION);  // don't send UDP
+      return;                                // don't activate realtime live mode
       break;
 
     case DMX_MODE_MULTIPLE_DRGB:
@@ -177,7 +184,7 @@ void handleE131Packet(e131_packet_t* p, IPAddress clientIP, byte protocol){
           previousLeds = 0;
           // First DMX address is dimmer in DMX_MODE_MULTIPLE_DRGB mode.
           if (DMXMode == DMX_MODE_MULTIPLE_DRGB) {
-            strip.setBrightness(e131_data[dmxOffset++]);
+            strip.setBrightness(e131_data[dmxOffset++], true);
           }
         } else {
           // All subsequent universes start at the first channel.

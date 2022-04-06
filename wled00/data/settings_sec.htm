@@ -5,6 +5,7 @@
 	<meta charset="utf-8">
 	<title>Прочие настройки</title>
 	<script>
+		var d = document;
 		function H()
 		{
 			window.open("https://github.com/Aircoookie/WLED/wiki/Settings#security-settings");
@@ -17,6 +18,34 @@
 		{
 			window.open("/update","_self");
 		}
+		function gId(s)
+		{
+			return d.getElementById(s);
+		}
+		function isObject(item) {
+			return (item && typeof item === 'object' && !Array.isArray(item));
+		}
+		var timeout;
+		function showToast(text, error = false)
+		{
+			var x = gId("toast");
+			x.innerHTML = text;
+			x.className = error ? "error":"show";
+			clearTimeout(timeout);
+			x.style.animation = 'none';
+			timeout = setTimeout(function(){ x.className = x.className.replace("show", ""); }, 2900);
+		}
+		function uploadFile(fO,name) {
+			var req = new XMLHttpRequest();
+			req.addEventListener('load', function(){showToast(this.responseText,this.status >= 400)});
+			req.addEventListener('error', function(e){showToast(e.stack,true);});
+			req.open("POST", "/upload");
+			var formData = new FormData();
+			formData.append("data", fO.files[0], name);
+			req.send(formData);
+			fO.value = '';
+			return false;
+	    }
 		function GetV()
 		{
 			//values injected by server while sending HTML
@@ -30,28 +59,39 @@
 	<form id="form_s" name="Sf" method="post">
 		<div class="helpB"><button type="button" onclick="H()">?</button></div>
 		<button type="button" onclick="B()">Назад</button><button type="submit">Сохранить и перезагрузить</button><hr>
-		<h2>Обновение и безопасность</h2>
-		Блокировка обновлений через OTA: <input type="checkbox" name="NO"><br>
+		<h2>Обновления и безопасность</h2>
+		Запретить обновление через OTA: <input type="checkbox" name="NO"><br>
 		Кодовое слово: <input type="password" name="OP" maxlength="32"><br>
-		Чтобы включить режим OTA, также потребуется ввести кодовое слово!<br>
-		Кодовое слово можно изменить когда режим OTA включен.<br>
-		<b>Отключайте OTA, когда он не используется, иначе злоумышленник может перепрограммировать устройство!</b><br>
-		<i>Настройки на этой странице можно изменить, только если блокировка OTA отключена!</i><br>
+		Чтобы включить обновление через OTA, в целях безопасности, вам также необходимо ввести правильное кодовое слово!<br>
+		Кодовое слово можно изменить только если режим обновления через OTA включен.<br>
+		<b>Отключайте режим обновления через OTA, когда он не используется, иначе злоумышленник может перепрограммировать устройство!</b><br>
+		<i>Настройки на этой странице можно изменить, только если разрешено обновление через OTA!</i><br>
 		Запретить доступ к настройкам WiFi, если он заблокирован: <input type="checkbox" name="OW"><br><br>
-		Сброс к заводским настройкам: <input type="checkbox" name="RS"><br>
-		Все содержимое EEPROM (настройки) будет удалено.<br><br>
+		Сбросить до заводских настроек: <input type="checkbox" name="RS"><br>
+		Все настройки и пресеты будут удалены!<br><br>
 		HTTP-трафик не имеет шифрования. Злоумышленник в той же сети может перехватить данные формы!
 		<h3>Обновление программного обеспечения</h3>
 		<button type="button" onclick="U()">Обновление через OTA</button><br>
 		Включить ArduinoOTA: <input type="checkbox" name="AO"><br>
+    <h3>Резервное копирование и восстановление</h3>
+		<a class="btn lnk" href="/presets.json?download" target="download-frame">Резервное копирование пресетов</a><br>
+		<div>Восстановить пресеты<br><input type="file" name="data" accept=".json"> <input type="button" value="Восстановить" onclick="uploadFile(d.Sf.data,'/presets.json');"><br></div><br>
+		<a class="btn lnk" href="/cfg.json?download" target="download-frame">Резервное копирование настроек</a><br>
+		<div>Восстановить настройки<br><input type="file" name="data2" accept=".json"> <input type="button" value="Восстановить" onclick="uploadFile(d.Sf.data2,'/cfg.json');"><br></div>
+		<div style="color: #fa0;">&#9888; Восстановление пресетов/настроек ПЕРЕЗАПИСЫВАЕТ текущие пресеты/настройки.<br>
+		Неправильная конфигурация файлов может потребовать сброса настроек или перепрошивки вашего устройства.</div>
+		Из соображений безопасности пароли не резервируются.
 		<h3>О проекте</h3>
-		<a href="https://github.com/Aircoookie/WLED/" target="_blank">WLED</a> version ##VERSION##<!-- Autoreplaced from package.json --><br><br>
-		<a href="https://github.com/Aircoookie/WLED/wiki/Contributors-and-credits" target="_blank">Авторы и благодарности</a><br>
-		Огромное спасибо всем, кто помог мне создать WLED!<br><br>
-		(c) 2016-2021 Christian Schwinne (Кристиан Швинн) <br>
+		Версия <a href="https://github.com/Aircoookie/WLED/" target="_blank">WLED</a> ##VERSION##<!-- Autoreplaced from package.json --><br><br>
+		<a href="https://github.com/Aircoookie/WLED/wiki/Contributors-and-credits" target="_blank">Авторы, зависимости и благодарности</a><br>
+		Огромное спасибо всем, кто помог мне создать WLED!<br>
+		Перевод на русский язык - Скляр Роман, <a href="https://github.com/S-LABc" target="_blank">S-LAB</a><br><br>
+		(c) 2016-2022 Christian Schwinne (Кристиан Швинн)<br>
 		<i>Лицензия <a href="https://github.com/Aircoookie/WLED/blob/master/LICENSE" target="_blank">MIT license</a></i><br><br>
-		Сообщение от сервера: <span class="sip"> Ошибка ответа! </span><hr>
+		Сообщение от сервера: <span class="sip"> ошибка! </span><hr>
+		<div id="toast"></div>
 		<button type="button" onclick="B()">Назад</button><button type="submit">Сохранить и перезагрузить</button>
 	</form>
+	<iframe name=download-frame style='display:none;'></iframe>
 </body>
 </html>

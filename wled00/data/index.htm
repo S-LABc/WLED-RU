@@ -44,18 +44,33 @@
 
 <div class ="container">
 	<div id="Colors" class="tabcontent">
-		<div id="picker" class="noslide"></div>
+		<div id="pwrap">
+			<div id="picker" class="noslide"></div>
+			<div id="vwrap">
+				<div class="sliderwrap il" id="vwrap">
+					<input id="sliderV" class="noslide" oninput="fromV()" onchange="setColor(0)" max="100" min="0" type="range" value="128" step="any" />
+					<div class="sliderdisplay"></div>
+				</div><br>
+			</div>
+		</div>
+    <div id="kwrap">
+			<div class="sliderwrap il">
+				<input id="sliderK" class="noslide" oninput="fromK()" onchange="setColor(0)" max="10091" min="1900" type="range" value="6550" />
+				<div class="sliderdisplay"></div>
+			</div>
+		</div>
 		<div id="rgbwrap">
-			<div class="sliderwrap il">
-				<input id="sliderR" class="noslide" onchange="fromRgb()" oninput="updateTrail(this,1)" max="255" min="0" type="range" value="128" />
+      <p class="labels">Цвет RGB</p>
+			<div class="sliderwrap il" id="rwrap">
+				<input id="sliderR" class="noslide" onchange="setColor(0)" oninput="fromRgb()" max="255" min="0" type="range" value="128" />
 				<div class="sliderdisplay"></div>
 			</div><br>
-			<div class="sliderwrap il">
-				<input id="sliderG" class="noslide" onchange="fromRgb()" oninput="updateTrail(this,2)" max="255" min="0" type="range" value="128" />
+			<div class="sliderwrap il" id="gwrap">
+				<input id="sliderG" class="noslide" onchange="setColor(0)" oninput="fromRgb()" max="255" min="0" type="range" value="128" />
 				<div class="sliderdisplay"></div>
 			</div><br>
-			<div class="sliderwrap il">
-				<input id="sliderB" class="noslide" onchange="fromRgb()" oninput="updateTrail(this,3)" max="255" min="0" type="range" value="128" />
+			<div class="sliderwrap il" id="bwrap">
+				<input id="sliderB" class="noslide" onchange="setColor(0)" oninput="fromRgb()" max="255" min="0" type="range" value="128" />
 				<div class="sliderdisplay"></div>
 			</div><br>
 		</div>
@@ -63,6 +78,13 @@
 			<p class="labels">Канал белого</p>
 			<div class="sliderwrap il">
 				<input id="sliderW" class="noslide" onchange="setColor(0)" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
+				<div class="sliderdisplay"></div>
+			</div>
+		</div>
+    <div id="wbal">
+      <p class="labels">Баланс белого</p>
+			<div class="sliderwrap il">
+				<input id="sliderA" class="noslide" onchange="setBalance(this.value)" max="255" min="0" type="range" value="128" />
 				<div class="sliderdisplay"></div>
 			</div>
 		</div>
@@ -85,35 +107,29 @@
 			<button class="xxs cl btn" onclick="selectSlot(2);">3</button>
 		</div>
 		<div id="hexw">
-			<input id="hexc" type="text" class="noslide" onkeydown="hexEnter(this)" autocomplete="off" maxlength="8" />
-			<button id="hexcnf" class="xxs btn" onclick="fromHex();"><i class="icons btna-icon">&#xe390;</i></button>
+			<input id="hexc" type="text" class="noslide" onkeydown="hexEnter()" autocomplete="off" maxlength="8" />
+			<button id="hexcnf" class="xxs btn" onclick="fromHex();"><i class="icons no-margin">&#xe390;</i></button>
 		</div>
-		<p class="labels">
-			<i class="icons sel-icon" onclick="tglHex()">&#xe2b3;</i>
-			Палитра
-		</p>
-		<div class="il">
-			<div id="selectPalette" class="list">
-				<div class="lstI" data-id="0">
-					<label class="check schkl">
-						&nbsp;
-						<input type="radio" value="${palettes[i].id}" name="palette" onChange="setPalette()">
-						<span class="checkmark schk"></span>
-					</label>
-					<div class="lstIcontent">
-						<span class="lstIname">
-							По умолчанию
-						</span>
+		<div id="palwrap">
+			<p class="labels">
+				<i class="icons sel-icon" onclick="tglHex()">&#xe2b3;</i>
+				Цветовая палитра
+			</p>
+			<div class="il">
+				<div id="pallist" class="list">
+					<div class="lstI" data-id="0">
+						<label class="check schkl">
+							&nbsp;
+							<input type="radio" value="${palettes[i].id}" name="palette" onChange="setPalette()">
+							<span class="radiomark schk"></span>
+						</label>
+						<div class="lstIcontent">
+							<span class="lstIname">
+								По умолчанию
+							</span>
+						</div>
 					</div>
 				</div>
-				<div class="lstI">
-					<div class="lstIcontent">
-						<span class="lstIname">
-							Загрузка...
-						</span>
-					</div>
-				</div>
-
 			</div>
 		</div>
 	</div>
@@ -121,7 +137,7 @@
 	<div id="Effects" class="tabcontent">
 		<p class="labels">Скорость</p>
 		<div class="staytop">
-			<i class="icons slider-icon">&#xe325;</i>
+			<i class="icons slider-icon" style="cursor: pointer;" onclick="tglFreeze()">&#xe325;</i>
 			<div class="sliderwrap il">
 				<input id="sliderSpeed" class="noslide" onchange="setSpeed()" oninput="updateTrail(this)" max="255" min="0" type="range" value="128" />
 				<output class="sliderbubble hidden"></output>
@@ -153,9 +169,10 @@
 		<div id="segutil2">
 			<button class="btn btn-s" id="rsbtn" onclick="rSegs()">Сбросить</button>
 		</div>
+    <p>Переход: <input id="tt" class="noslide" type="number" min="0" max="65.5" step="0.1" value="0.7">с</p>
 	</div>
 
-	<div id="Favorites" class="tabcontent">
+	<div id="Presets" class="tabcontent">
 		<div id="putil">
 
 		</div>
@@ -164,16 +181,7 @@
 		</div>
 		<div id="pcont">
 			Загрузка...
-		</div><br>
-		 <label class="check psvl">
-			Зациклить
-			<input type="checkbox" id="cyToggle" onchange="toggleCY()">
-			<span class="checkmark psv"></span>
-		</label><br>
-		Первый пресет: <input id="cycs" class="noslide" type="number" min="1" max="249" value="1"><br>
-		Последний пресет: <input id="cyce" class="noslide" type="number" min="2" max="250" value="3"><br>
-		Длительность пресета: <input id="cyct" class="noslide" type="number" min="0.2" max="6553.5" step="0.1" value="1.2">с<br>
-		Длительность перехода: <input id="cyctt" class="noslide" type="number" min="0" max="65.5" step="0.1" value="0.7">с
+		</div>
 	</div>
 </div>
 
@@ -181,7 +189,7 @@
 	<button class="tablinks" onclick="openTab(0)"><i class="icons">&#xe2b3;</i><p class="tab-label">Цвета</p></button>
 	<button class="tablinks" onclick="openTab(1)"><i class="icons">&#xe23d;</i><p class="tab-label">Эффекты</p></button>
 	<button class="tablinks" onclick="openTab(2)"><i class="icons">&#xe34b;</i><p class="tab-label">Сегменты</p></button>
-	<button class="tablinks" onclick="openTab(3)"><i class="icons">&#xe04c;</i><p class="tab-label">Избранное</p></button>
+	<button class="tablinks" onclick="openTab(3)"><i class="icons">&#xe04c;</i><p class="tab-label">Пресеты</p></button>
 </div>
 
 <div id="connind"></div>
@@ -189,7 +197,7 @@
 <div id="namelabel" onclick="toggleNodes()"></div>
 <div id="info" class="modal">
 	<div id="imgw">
-		<img alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAggAAACMCAYAAAAZQlGEAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAKLSURBVHhe7dgxjtwwEADBpf//5zUDwklnpzFAnKoSTigNFTT0AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGDcOieX+G5nvNLaznil6f1Nv+/tz3c7+3tmen/Tpu/jbe877c85AQD+EQgAQAgEACAEAgAQAgEACIEAAIRAAABCIAAAIRAAgBAIAEAIBAAgBAIAEAIBAAiBAACEQAAAQiAAACEQAIAQCABACAQAINY5+aHvdsYRazvjK9jfM7fvz/0+Y3+/2+336w8CABACAQAIgQAAhEAAAEIgAAAhEACAEAgAQAgEACAEAgAQAgEACIEAAIRAAABCIAAAIRAAgBAIAEAIBAAgBAIAEAIBAAiBAADEOudrfLczXmltZ3yF6fuwv2em9+d+n5ne3zT3cZfp+/AHAQAIgQAAhEAAAEIgAAAhEACAEAgAQAgEACAEAgAQAgEACIEAAIRAAABCIAAAIRAAgBAIAEAIBAAgBAIAEAIBAAiBAACEQAAAYp3zNb7bGUes7Yz8wO334fmeuf35bmd/z9y+v9ufzx8EACAEAgAQAgEACIEAAIRAAABCIAAAIRAAgBAIAEAIBAAgBAIAEAIBAAiBAACEQAAAQiAAACEQAIAQCABACAQAIAQCABACAQCIdc4x3+2MV1rbGfmFpr+/6e/l9ue73fT+pt1+H2/bn+/lGX8QAIAQCABACAQAIAQCABACAQAIgQAAhEAAAEIgAAAhEACAEAgAQAgEACAEAgAQAgEACIEAAIRAAABCIAAAIRAAgBAIAEAIBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgP/u8/kLYCqAxINTyZkAAAAASUVORK5CYII=">
+		<img class="wi" alt="" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB0AAAAFCAYAAAC5Fuf5AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABbSURBVChTlY9bDoAwDMNW7n9nwCipytQN4Z8tbrTHmDmF4oPzyldwRqp1SSdnV/NuZuzqerAByxXznBw3igkeFEfXyUuhK/yFM0CxJfyqXZEOc6/Sr9/bf7uIC5Nwd7orMvAPAAAAAElFTkSuQmCC" />
 	</div><br>
 <div id="kv">Загрузка...</div><br>
 <button class="btn infobtn" onclick="requestJson(null)">Обновить</button>
@@ -200,7 +208,7 @@
 </div>
 
 <div id="nodes" class="modal">
-  <div id="ndlt">Узлы WLED</div>
+  <div id="ndlt">Список узлов WLED</div>
   <div id="kn">Загрузка...</div><br>
   <button class="btn infobtn" onclick="loadNodes()">Обновить</button>
   <button class="btn infobtn" onclick="toggleNodes()">Закрыть</button><br>
@@ -209,13 +217,12 @@
 <div id="rover" class="modal">
 	<i class="icons huge">&#xe410;</i><br>
 	<div id="lv">?</div><br><br>
-	Чтобы использовать встроенные эффекты, используйте кнопку отмены ниже.<br>
-	Вы можете вернуться в режим реального времени, нажав на звездочку в верхнем левом углу.<br>
-	<button class="btn" onclick="setLor(1)">Отменить один раз</button>
-	<button class="btn" onclick="setLor(2)">Отменять перед каждой загрузкой</button><br>
+	Чтобы использовать встроенные эффекты, используйте кнопку переопределения ниже.<br>
+	Вы можете вернуться в режим управления в реальном времени, нажав на звездочку в левом верхнем углу.<br>
+	<button class="btn" onclick="setLor(1)">Переопределить один раз</button>
+	<button class="btn" onclick="setLor(2)">Переопределить до перезагрузки</button><br>
 	<span class="h">Для лучшей производительности рекомендуется отключать источник потоковой передачи, когда он не используется.</span>
 </div>
-
 <i id="roverstar" class="icons huge" onclick="setLor(0)">&#xe410;</i><br>
 <script src="iro.js"></script>
 <script src="rangetouch.js"></script>

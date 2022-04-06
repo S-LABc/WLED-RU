@@ -24,8 +24,6 @@
   Modified for WLED
 */
 
-#include "wled.h"
-
 #ifndef WS2812FX_h
 #define WS2812FX_h
 
@@ -48,29 +46,33 @@
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #endif
 
-/* Disable effects with high flash memory usage (currently TV simulator) - saves 18.5kB */
-//#define WLED_DISABLE_FX_HIGH_FLASH_USE
-
 /* Not used in all effects yet */
 #define WLED_FPS         42
-#define FRAMETIME        (1000/WLED_FPS)
+#define FRAMETIME_FIXED  (1000/WLED_FPS)
+#define FRAMETIME        _frametime
 
 /* each segment uses 52 bytes of SRAM memory, so if you're application fails because of
   insufficient memory, decreasing MAX_NUM_SEGMENTS may help */
 #ifdef ESP8266
-  #define MAX_NUM_SEGMENTS    12
+  #define MAX_NUM_SEGMENTS    16
   /* How many color transitions can run at once */
   #define MAX_NUM_TRANSITIONS  8
   /* How much data bytes all segments combined may allocate */
-  #define MAX_SEGMENT_DATA  2048
+  #define MAX_SEGMENT_DATA  4096
 #else
-  #define MAX_NUM_SEGMENTS    16
-  #define MAX_NUM_TRANSITIONS 16
-  #define MAX_SEGMENT_DATA  8192
+  #ifndef MAX_NUM_SEGMENTS
+    #define MAX_NUM_SEGMENTS  32
+  #endif
+  #define MAX_NUM_TRANSITIONS 24
+  #define MAX_SEGMENT_DATA  20480
 #endif
 
+/* How much data bytes each segment should max allocate to leave enough space for other segments,
+  assuming each segment uses the same amount of data. 256 for ESP8266, 640 for ESP32. */
+#define FAIR_DATA_PER_SEG (MAX_SEGMENT_DATA / MAX_NUM_SEGMENTS)
+
 #define LED_SKIP_AMOUNT  1
-#define MIN_SHOW_DELAY  15
+#define MIN_SHOW_DELAY   (_frametime < 16 ? 8 : 15)
 
 #define NUM_COLORS       3 /* number of colors per segment */
 #define SEGMENT          _segments[_segment_index]
@@ -78,8 +80,7 @@
 #define SEGENV           _segment_runtimes[_segment_index]
 #define SEGLEN           _virtualSegmentLength
 #define SEGACT           SEGMENT.stop
-#define SPEED_FORMULA_L  5 + (50*(255 - SEGMENT.speed))/SEGLEN
-#define RESET_RUNTIME    memset(_segment_runtimes, 0, sizeof(_segment_runtimes))
+#define SPEED_FORMULA_L  5U + (50U*(255U - SEGMENT.speed))/SEGLEN
 
 // some common colors
 #define RED        (uint32_t)0xFF0000
@@ -160,16 +161,16 @@
 #define FX_MODE_COMET                   41
 #define FX_MODE_FIREWORKS               42
 #define FX_MODE_RAIN                    43
-#define FX_MODE_TETRIX                  44
+#define FX_MODE_TETRIX                  44  //was Merry Christmas prior to 0.12.0 (use "Chase 2" with Red/Green)
 #define FX_MODE_FIRE_FLICKER            45
 #define FX_MODE_GRADIENT                46
 #define FX_MODE_LOADING                 47
-#define FX_MODE_POLICE                  48
-#define FX_MODE_POLICE_ALL              49
+#define FX_MODE_POLICE                  48  // candidate for removal (after below three)
+#define FX_MODE_FAIRY                   49  //was Police All prior to 0.13.0-b6 (use "Two Dots" with Red/Blue and full intensity)
 #define FX_MODE_TWO_DOTS                50
-#define FX_MODE_TWO_AREAS               51
-#define FX_MODE_CIRCUS_COMBUSTUS        52
-#define FX_MODE_HALLOWEEN               53
+#define FX_MODE_FAIRYTWINKLE            51  //was Two Areas prior to 0.13.0-b6 (use "Two Dots" with full intensity)
+#define FX_MODE_RUNNING_DUAL            52
+#define FX_MODE_HALLOWEEN               53  // candidate for removal
 #define FX_MODE_TRICOLOR_CHASE          54
 #define FX_MODE_TRICOLOR_WIPE           55
 #define FX_MODE_TRICOLOR_FADE           56
@@ -230,7 +231,7 @@
 #define FX_MODE_CHUNCHUN               111
 #define FX_MODE_DANCING_SHADOWS        112
 #define FX_MODE_WASHING_MACHINE        113
-#define FX_MODE_CANDY_CANE             114
+#define FX_MODE_CANDY_CANE             114  // candidate for removal
 #define FX_MODE_BLENDS                 115
 #define FX_MODE_TV_SIMULATOR           116
 #define FX_MODE_DYNAMIC_SMOOTH         117
@@ -246,22 +247,38 @@ class WS2812FX {
   
   // segment parameters
   public:
-    typedef struct Segment { // 24 bytes
+    typedef struct Segment { // 31 (32 in memory) bytes
       uint16_t start;
       uint16_t stop; //segment invalid if stop == 0
-      uint8_t speed;
-      uint8_t intensity;
-      uint8_t palette;
-      uint8_t mode;
-      uint8_t options; //bit pattern: msb first: transitional needspixelstate tbd tbd (paused) on reverse selected
-      uint8_t grouping, spacing;
-      uint8_t opacity;
+      uint16_t offset;
+      uint8_t  speed;
+      uint8_t  intensity;
+      uint8_t  palette;
+      uint8_t  mode;
+      uint8_t  options; //bit pattern: msb first: transitional needspixelstate tbd tbd (paused) on reverse selected
+      uint8_t  grouping, spacing;
+      uint8_t  opacity;
       uint32_t colors[NUM_COLORS];
+      uint8_t  cct; //0==1900K, 255==10091K
+      uint8_t  _capabilities;
+      char *name;
       bool setColor(uint8_t slot, uint32_t c, uint8_t segn) { //returns true if changed
         if (slot >= NUM_COLORS || segn >= MAX_NUM_SEGMENTS) return false;
         if (c == colors[slot]) return false;
-        ColorTransition::startTransition(opacity, colors[slot], instance->_transitionDur, segn, slot);
+        uint8_t b = (slot == 1) ? cct : opacity;
+        ColorTransition::startTransition(b, colors[slot], instance->_transitionDur, segn, slot);
         colors[slot] = c; return true;
+      }
+      void setCCT(uint16_t k, uint8_t segn) {
+        if (segn >= MAX_NUM_SEGMENTS) return;
+        if (k > 255) { //kelvin value, convert to 0-255
+          if (k < 1900)  k = 1900;
+          if (k > 10091) k = 10091;
+          k = (k - 1900) >> 5;
+        }
+        if (cct == k) return;
+        ColorTransition::startTransition(cct, colors[1], instance->_transitionDur, segn, 1);
+        cct = k;
       }
       void setOpacity(uint8_t o, uint8_t segn) {
         if (segn >= MAX_NUM_SEGMENTS) return;
@@ -269,46 +286,44 @@ class WS2812FX {
         ColorTransition::startTransition(opacity, colors[0], instance->_transitionDur, segn, 0);
         opacity = o;
       }
-      /*uint8_t actualOpacity() { //respects On/Off state
-        if (!getOption(SEG_OPTION_ON)) return 0;
-        return opacity;
-      }*/
       void setOption(uint8_t n, bool val, uint8_t segn = 255)
       {
-        //bool prevOn = false;
-        //if (n == SEG_OPTION_ON) prevOn = getOption(SEG_OPTION_ON);
+        bool prevOn = false;
+        if (n == SEG_OPTION_ON) {
+          prevOn = getOption(SEG_OPTION_ON);
+          if (!val && prevOn) { //fade off
+            ColorTransition::startTransition(opacity, colors[0], instance->_transitionDur, segn, 0);
+          }
+        }
+
         if (val) {
           options |= 0x01 << n;
         } else
         {
           options &= ~(0x01 << n);
         }
-        //transitions on segment on/off don't work correctly at this point
-        /*if (n == SEG_OPTION_ON && segn < MAX_NUM_SEGMENTS && getOption(SEG_OPTION_ON) != prevOn) {
-          if (getOption(SEG_OPTION_ON)) {
-            ColorTransition::startTransition(0, colors[0], instance->_transitionDur, segn, 0);
-          } else {
-            ColorTransition::startTransition(opacity, colors[0], instance->_transitionDur, segn, 0);
-          }
-        }*/
+
+        if (n == SEG_OPTION_ON && val && !prevOn) { //fade on
+          ColorTransition::startTransition(0, colors[0], instance->_transitionDur, segn, 0);
+        }
       }
       bool getOption(uint8_t n)
       {
         return ((options >> n) & 0x01);
       }
-      bool isSelected()
+      inline bool isSelected()
       {
         return getOption(0);
       }
-      bool isActive()
+      inline bool isActive()
       {
         return stop > start;
       }
-      uint16_t length()
+      inline uint16_t length()
       {
         return stop - start;
       }
-      uint16_t groupLength()
+      inline uint16_t groupLength()
       {
         return grouping + spacing;
       }
@@ -320,21 +335,30 @@ class WS2812FX {
           vLength = (vLength + 1) /2;  // divide by 2 if mirror, leave at least a single LED
         return vLength;
       }
+      uint8_t differs(Segment& b);
+      inline uint8_t getLightCapabilities() {return _capabilities;}
+      void refreshLightCapabilities();
     } segment;
 
   // segment runtime parameters
     typedef struct Segment_runtime { // 28 bytes
-      unsigned long next_time;
-      uint32_t step;
-      uint32_t call;
-      uint16_t aux0;
-      uint16_t aux1;
+      unsigned long next_time;  // millis() of next update
+      uint32_t step;  // custom "step" var
+      uint32_t call;  // call counter
+      uint16_t aux0;  // custom var
+      uint16_t aux1;  // custom var
       byte* data = nullptr;
       bool allocateData(uint16_t len){
         if (data && _dataLen == len) return true; //already allocated
         deallocateData();
         if (WS2812FX::instance->_usedSegmentData + len > MAX_SEGMENT_DATA) return false; //not enough memory
-        data = new (std::nothrow) byte[len];
+        // if possible use SPI RAM on ESP32
+        #if defined(ARDUINO_ARCH_ESP32) && defined(WLED_USE_PSRAM)
+        if (psramFound())
+          data = (byte*) ps_malloc(len);
+        else
+        #endif
+          data = (byte*) malloc(len);
         if (!data) return false; //allocation failed
         WS2812FX::instance->_usedSegmentData += len;
         _dataLen = len;
@@ -342,7 +366,7 @@ class WS2812FX {
         return true;
       }
       void deallocateData(){
-        delete[] data;
+        free(data);
         data = nullptr;
         WS2812FX::instance->_usedSegmentData -= _dataLen;
         _dataLen = 0;
@@ -367,8 +391,9 @@ class WS2812FX {
        * Flags that before the next effect is calculated,
        * the internal segment state should be reset. 
        * Call resetIfRequired before calling the next effect function.
+       * Safe to call from interrupts and network requests.
        */
-      void reset() { _requiresReset = true; }
+      inline void markForReset() { _requiresReset = true; }
       private:
         uint16_t _dataLen = 0;
         bool _requiresReset = false;
@@ -383,6 +408,7 @@ class WS2812FX {
       static void startTransition(uint8_t oldBri, uint32_t oldCol, uint16_t dur, uint8_t segn, uint8_t slot) {
         if (segn >= MAX_NUM_SEGMENTS || slot >= NUM_COLORS || dur == 0) return;
         if (instance->_brightness == 0) return; //do not need transitions if master bri is off
+        if (!instance->_segments[segn].getOption(SEG_OPTION_ON)) return; //not if segment is off either
         uint8_t tIndex = 0xFF; //none found
         uint16_t tProgression = 0;
         uint8_t s = segn + (slot << 6); //merge slot and segment into one byte
@@ -411,7 +437,8 @@ class WS2812FX {
         ColorTransition& t = instance->transitions[tIndex];
         if (t.segment == s) //this is an active transition on the same segment+color
         {
-          t.briOld = t.currentBri();
+          bool wasTurningOff = (oldBri == 0);
+          t.briOld = t.currentBri(wasTurningOff, slot);
           t.colorOld = t.currentColor(oldCol);
         } else {
           t.briOld = oldBri;
@@ -443,10 +470,15 @@ class WS2812FX {
       uint32_t currentColor(uint32_t colorNew) {
         return instance->color_blend(colorOld, colorNew, progress(true), true);
       }
-      uint8_t currentBri() {
+      uint8_t currentBri(bool turningOff = false, uint8_t slot = 0) {
         uint8_t segn = segment & 0x3F;
         if (segn >= MAX_NUM_SEGMENTS) return 0;
         uint8_t briNew = instance->_segments[segn].opacity;
+        if (slot == 0) {
+          if (!instance->_segments[segn].getOption(SEG_OPTION_ON) || turningOff) briNew = 0;
+        } else { //transition slot 1 brightness for CCT transition
+          briNew = instance->_segments[segn].cct;
+        }
         uint32_t prog = progress() + 1;
         return ((briNew * prog) + (briOld * (0x10000 - prog))) >> 16;
       }
@@ -502,10 +534,10 @@ class WS2812FX {
       _mode[FX_MODE_GRADIENT]                = &WS2812FX::mode_gradient;
       _mode[FX_MODE_LOADING]                 = &WS2812FX::mode_loading;
       _mode[FX_MODE_POLICE]                  = &WS2812FX::mode_police;
-      _mode[FX_MODE_POLICE_ALL]              = &WS2812FX::mode_police_all;
+      _mode[FX_MODE_FAIRY]                   = &WS2812FX::mode_fairy;
       _mode[FX_MODE_TWO_DOTS]                = &WS2812FX::mode_two_dots;
-      _mode[FX_MODE_TWO_AREAS]               = &WS2812FX::mode_two_areas;
-      _mode[FX_MODE_CIRCUS_COMBUSTUS]        = &WS2812FX::mode_circus_combustus;
+      _mode[FX_MODE_FAIRYTWINKLE]            = &WS2812FX::mode_fairytwinkle;
+      _mode[FX_MODE_RUNNING_DUAL]            = &WS2812FX::mode_running_dual;
       _mode[FX_MODE_HALLOWEEN]               = &WS2812FX::mode_halloween;
       _mode[FX_MODE_TRICOLOR_CHASE]          = &WS2812FX::mode_tricolor_chase;
       _mode[FX_MODE_TRICOLOR_WIPE]           = &WS2812FX::mode_tricolor_wipe;
@@ -584,7 +616,7 @@ class WS2812FX {
     }
 
     void
-      finalizeInit(uint16_t countPixels, bool skipFirst),
+      finalizeInit(),
       service(void),
       blur(uint8_t),
       fill(uint32_t),
@@ -592,65 +624,69 @@ class WS2812FX {
       setMode(uint8_t segid, uint8_t m),
       setColor(uint8_t slot, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0),
       setColor(uint8_t slot, uint32_t c),
-      setBrightness(uint8_t b),
+      setCCT(uint16_t k),
+      setBrightness(uint8_t b, bool direct = false),
       setRange(uint16_t i, uint16_t i2, uint32_t col),
       setShowCallback(show_callback cb),
       setTransition(uint16_t t),
       setTransitionMode(bool t),
       calcGammaTable(float),
       trigger(void),
-      setSegment(uint8_t n, uint16_t start, uint16_t stop, uint8_t grouping = 0, uint8_t spacing = 0),
+      setSegment(uint8_t n, uint16_t start, uint16_t stop, uint8_t grouping = 0, uint8_t spacing = 0, uint16_t offset = UINT16_MAX),
+      setMainSegmentId(uint8_t n),
+      restartRuntime(),
       resetSegments(),
+      makeAutoSegments(bool forceReset = false),
+      fixInvalidSegments(),
       setPixelColor(uint16_t n, uint32_t c),
       setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b, uint8_t w = 0),
       show(void),
-      setColorOrder(uint8_t co),
-      setPixelSegment(uint8_t n);
+			setTargetFps(uint8_t fps),
+      deserializeMap(uint8_t n=0);
 
     bool
-      isRgbw = false,
       gammaCorrectBri = false,
       gammaCorrectCol = true,
-      applyToAllSelected = true,
-      segmentsAreIdentical(Segment* a, Segment* b),
-      setEffectConfig(uint8_t m, uint8_t s, uint8_t i, uint8_t p),
+      checkSegmentAlignment(void),
+      hasRGBWBus(void),
+      hasCCTBus(void),
       // return true if the strip is being sent pixel updates
       isUpdating(void);
 
     uint8_t
-      mainSegment = 0,
-      rgbwMode = RGBW_MODE_DUAL,
       paletteFade = 0,
       paletteBlend = 0,
       milliampsPerLed = 55,
-//      getStripType(uint8_t strip=0),
-//      setStripType(uint8_t type, uint8_t strip=0),
+      autoWhiteMode = RGBW_MODE_DUAL,
+      cctBlending = 0,
       getBrightness(void),
-      getMode(void),
-      getSpeed(void),
       getModeCount(void),
       getPaletteCount(void),
       getMaxSegments(void),
-      //getFirstSelectedSegment(void),
+      getActiveSegmentsNum(void),
+      getFirstSelectedSegId(void),
       getMainSegmentId(void),
-      getColorOrder(void),
+      getLastActiveSegmentId(void),
+      getTargetFps(void),
+      setPixelSegment(uint8_t n),
       gamma8(uint8_t),
       gamma8_cal(uint8_t, float),
       get_random_wheel_index(uint8_t);
 
+    inline uint8_t sin_gap(uint16_t in) {
+      if (in & 0x100) return 0;
+      return sin8(in + 192); // correct phase shift of sine so that it starts and stops at 0
+    }
+
     int8_t
-//      setStripPin(uint8_t strip, int8_t pin),
-//      getStripPin(uint8_t strip=0),
-//      setStripPinClk(uint8_t strip, int8_t pin),
-//      getStripPinClk(uint8_t strip=0),
       tristate_square8(uint8_t x, uint8_t pulsewidth, uint8_t attdec);
 
     uint16_t
       ablMilliampsMax,
       currentMilliamps,
-//      setStripLen(uint8_t strip, uint16_t len),
-//      getStripLen(uint8_t strip=0),
       triwave16(uint16_t),
+      getLengthTotal(void),
+      getLengthPhysical(void),
       getFps();
 
     uint32_t
@@ -662,14 +698,12 @@ class WS2812FX {
       currentColor(uint32_t colorNew, uint8_t tNr),
       gamma32(uint32_t),
       getLastShow(void),
-      getPixelColor(uint16_t),
-      getColor(void);
+      getPixelColor(uint16_t);
 
-    WS2812FX::Segment&
-      getSegment(uint8_t n);
-
-    WS2812FX::Segment_runtime
-      getSegmentRuntime(void);
+    WS2812FX::Segment
+      &getSegment(uint8_t n),
+      &getFirstSelectedSeg(void),
+      &getMainSegment(void);
 
     WS2812FX::Segment*
       getSegments(void);
@@ -726,10 +760,10 @@ class WS2812FX {
       mode_gradient(void),
       mode_loading(void),
       mode_police(void),
-      mode_police_all(void),
+      mode_fairy(void),
       mode_two_dots(void),
-      mode_two_areas(void),
-      mode_circus_combustus(void),
+      mode_fairytwinkle(void),
+      mode_running_dual(void),
       mode_bicolor_chase(void),
       mode_tricolor_chase(void),
       mode_tricolor_wipe(void),
@@ -802,19 +836,19 @@ class WS2812FX {
     CRGBPalette16 currentPalette;
     CRGBPalette16 targetPalette;
 
-    uint16_t _length, _lengthRaw, _virtualSegmentLength;
+    uint16_t _length, _virtualSegmentLength;
     uint16_t _rand16seed;
     uint8_t _brightness;
     uint16_t _usedSegmentData = 0;
     uint16_t _transitionDur = 750;
 
+		uint8_t _targetFps = 42;
+		uint16_t _frametime = (1000/42);
     uint16_t _cumulativeFps = 2;
 
-    void load_gradient_palette(uint8_t);
-    void handle_palette(void);
-
     bool
-      _skipFirstMode,
+      _isOffRefreshRequired = false, //periodic refresh is required for the strip to remain off.
+      _hasWhiteChannel = false,
       _triggered;
 
     mode_ptr _mode[MODE_COUNT]; // SRAM footprint: 4 bytes per element
@@ -828,16 +862,15 @@ class WS2812FX {
       color_wipe(bool, bool),
       dynamic(bool),
       scan(bool),
-      theater_chase(uint32_t, uint32_t, bool),
-      running_base(bool),
+      running_base(bool,bool),
       larson_scanner(bool),
       sinelon_base(bool,bool),
       dissolve(uint32_t),
       chase(uint32_t, uint32_t, uint32_t, bool),
       gradient_base(bool),
       ripple_base(bool),
-      police_base(uint32_t, uint32_t, bool),
-      running(uint32_t, uint32_t),
+      police_base(uint32_t, uint32_t),
+      running(uint32_t, uint32_t, bool theatre=false),
       tricolor_chase(uint32_t, uint32_t),
       twinklefox_base(bool),
       spots_base(uint16_t),
@@ -849,7 +882,9 @@ class WS2812FX {
     void
       blendPixelColor(uint16_t n, uint32_t color, uint8_t blend),
       startTransition(uint8_t oldBri, uint32_t oldCol, uint16_t dur, uint8_t segn, uint8_t slot),
-      deserializeMap(void);
+      estimateCurrentAndLimitBri(void),
+      load_gradient_palette(uint8_t),
+      handle_palette(void);
 
     uint16_t* customMappingTable = nullptr;
     uint16_t  customMappingSize  = 0;
@@ -859,12 +894,15 @@ class WS2812FX {
 
     uint32_t _colors_t[3];
     uint8_t _bri_t;
+    bool _no_rgb = false;
     
     uint8_t _segment_index = 0;
     uint8_t _segment_index_palette_last = 99;
+    uint8_t _mainSegment;
+
     segment _segments[MAX_NUM_SEGMENTS] = { // SRAM footprint: 24 bytes per element
-      // start, stop, speed, intensity, palette, mode, options, grouping, spacing, opacity (unused), color[]
-      { 0, 7, DEFAULT_SPEED, 128, 0, DEFAULT_MODE, NO_OPTIONS, 1, 0, 255, {DEFAULT_COLOR}}
+      // start, stop, offset, speed, intensity, palette, mode, options, grouping, spacing, opacity (unused), color[], capabilities
+      {0, 7, 0, DEFAULT_SPEED, 128, 0, DEFAULT_MODE, NO_OPTIONS, 1, 0, 255, {DEFAULT_COLOR}, 0}
     };
     segment_runtime _segment_runtimes[MAX_NUM_SEGMENTS]; // SRAM footprint: 28 bytes per element
     friend class Segment_runtime;
@@ -875,19 +913,23 @@ class WS2812FX {
     uint16_t
       realPixelIndex(uint16_t i),
       transitionProgress(uint8_t tNr);
+  
+  public:
+    inline bool hasWhiteChannel(void) {return _hasWhiteChannel;}
+    inline bool isOffRefreshRequired(void) {return _isOffRefreshRequired;}
 };
 
 //10 names per line
 const char JSON_mode_names[] PROGMEM = R"=====([
 "Сплошной","Мигание","Дыхание","Стирание","Случайное страние","Случайные цвета","Подметание","Динамика","Цветовая петля","Радуга",
 "Сканирование","Два сканирования","Затухание","Театр","Театральная радуга","Суета","Пила","Мерцание","Растворение","Случайное растворение",
-"Искрение","Темные искры","Искрение+","Стробоскоп","Радужный стробоскоп","Мегастробоскоп","Мигающая радуга","Андроид","Погоня","Случайная погоня",
+"Искрение","Тёмные искры","Искрение+","Стробоскоп","Радужный стробоскоп","Мегастробоскоп","Мигающая радуга","Андроид","Погоня","Случайная погоня",
 "Радужная погоня","Бегущие вспышки","Бегущие вспышки 2","Бегущий по радуге","Разноцветный","Светофор","Случаное подметание","Суета 2","Аврора","Ручей",
 "Сканирование","Маяк","Фейерверк","Дождь","Тетрис","Искры","Градиент","Загрузка","Полиция","Полиция 2",
 "Две точки","Два участка","Цирк","Хэллоуин","Тройная погоня","Тройное стирание","Тройное затухание","Молния","Два глаза","Много комет",
 "Двойной сканер","Ручей 2","Колебание","Парад 2015","Жанглирование","Палитра","Огонь 2012","Цветные волны","Ритм","Заполняющий шум",
 "Шум 1","Шум 2","Шум 3","Шум 4","Цветное мерцание","Озеро","Метеор","Гладкий метеор","Железная дорога","Рябь",
-"Мерцающий лис","Мерцающий кот","Очи Хэллоуина","Сплошной узор","Сплошной тройной узор","Пятна","Исчезающие пятна","Блестки","Свеча","Звездный фейерверк",
+"Мерцающий лис","Мерцающий кот","Очи Хэллоуина","Сплошной узор","Сплошной тройной узор","Пятна","Исчезающие пятна","Блёстки","Свеча","Звёздный фейерверк",
 "Фейерверк 1D","Прыгающие мячи","Змейка","Две змейки","Радужные змейки","Попкорн","Капли","Плазма","Процент","Мерцающая радуга",
 "Сердцебиение","Тихий океан","Много свечей", "Сплошной блеск","Восход","Пошаговый","Много мерцаний","Тихий шум", "Синусоида","Фазированный шум",
 "Поток","Птицы","Танцующие тени","Стиральная машина","Леденец","Смешивание","ТВ симулятор","Гладкая динамика"
@@ -896,11 +938,13 @@ const char JSON_mode_names[] PROGMEM = R"=====([
 
 const char JSON_palette_names[] PROGMEM = R"=====([
 "По умолчанию","* Случайный цикл","* Цвет 1","* Цвета 1-2","* Цветовой градиент","* Только цвета","Вечеринка","Облака","Лава","Океан",
-"Лес","Радуга","Радужные полосы","Закат","Ривенделл","Бриз","Красный-синий","Нисходящий желтый","Аналоговый","Всплеск",
-"Пастель","Закат 2","Бук","Винтажный","Отъезд","Пейзаж","Пляж","Щербет","Голубой-пурпурный","Голубой-желтый",
-"Влажно-сухой","Июль","Желтый-коричневый","Оранжевый-фиолетовый","Трио","Огонь","Ледяной огонь","Циан","Светло-розовый","Осень",
-"Пурпурный","Красный-пурпурный","Желтый-пурпурный","Желтый-синий","Оранжевый-бирюзовый","Тиамат","Апрельская ночь","Оранжерея","C9","Сакура",
-"Аврора","Атлантика","C9 2","C9 3","Температура","Аврора 2"
+"Лес","Радуга","Радужные полосы","Закат","Ривенделл","Бриз","Красный-синий","Нисходящий жёлтый","Аналоговый","Всплеск",
+"Пастель","Закат 2","Бук","Винтажный","Отъезд","Пейзаж","Пляж","Щербет","Голубой-пурпурный","Голубой-жёлтый",
+"Влажно-сухой","Июль","Жёлтый-коричневый","Оранжевый-фиолетовый","Трио","Огонь","Ледяной огонь","Циан","Светло-розовый","Осень",
+"Пурпурный","Красный-пурпурный","Жёлтый-пурпурный","Жёлтый-синий","Оранжевый-бирюзовый","Тиамат","Апрельская ночь","Оранжерея","C9","Сакура",
+"Аврора","Атлантика","C9 2","C9 3","Температура","Аврора 2","Ретро клоун","Конфета","Токси риф","Фея риф",
+"Полусиний","Розовая конфета","Красный риф","Аква Флэш","Жёлтый-синий 2","Лёгкий свет","Красный свет","Красная мигалка","Красное смещение","Красный прилив",
+"Конфета 2"
 ])=====";
 
 #endif

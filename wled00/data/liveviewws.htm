@@ -4,7 +4,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
   <meta charset="utf-8">
   <meta name="theme-color" content="#222222">
-  <title>WLED Live Preview</title>
+  <title>WLED Предпросмотр</title>
   <style>
   body {
     margin: 0;
@@ -21,42 +21,44 @@
 <body>
   <div id="canv" />
   <script>
-    console.info("Live-Preview websocket opening");
-    var socket = new WebSocket("ws://"+document.location.host+"/ws");
-
-    socket.onopen = function () {
-      console.info("Live-Preview websocket is opened");
-      socket.send("{'lv':true}");
-    }
-
-    socket.onclose = function () { console.info("Live-Preview websocket is closing"); }
-
-    socket.onerror = function (event) { console.error("Live-Preview websocket error:", event); }
-
     function updatePreview(leds) {
       var str = "linear-gradient(90deg,";
       var len = leds.length;        
-      for (i = 0; i < len; i++) {
-        var leddata = leds[i];
-        if (leddata.length > 6) leddata = leddata.substring(2);
-        str += "#" + leddata;
-        if (i < len -1) str += ","
+      for (i = 2; i < len; i+=3) {
+        str += `rgb(${leds[i]},${leds[i+1]},${leds[i+2]})`;
+        if (i < len -3) str += ","
       }
       str += ")";
       document.getElementById("canv").style.background = str;
     }
 
-    socket.onmessage = function (event) {
+    function getLiveJson(e) {
       try {
-        var json = JSON.parse(event.data);
-        if (json && json.leds) {
-          requestAnimationFrame(function () {updatePreview(json.leds);});
-        } 
+        if (toString.call(e.data) === '[object ArrayBuffer]') {
+          let leds = new Uint8Array(event.data);
+          if (leds[0] != 76) return; //'L'
+          updatePreview(leds);
+        }
       }
       catch (err) {
-        console.error("Live-Preview websocket error:",err);
-      }      
+        console.error("Peek WS error:",err);
+      } 
     }
+
+    var ws = top.window.ws;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      console.info("Peek uses top WS");
+      ws.send("{'lv':true}");
+    } else {
+      console.info("Peek WS opening");
+      ws = new WebSocket((window.location.protocol == "https:"?"wss":"ws")+"://"+document.location.host+"/ws");
+      ws.onopen = function () {
+        console.info("Peek WS open");
+        ws.send("{'lv':true}");
+      }
+    }
+    ws.binaryType = "arraybuffer";
+    ws.addEventListener('message',getLiveJson);
   </script>
 </body>
 </html>
