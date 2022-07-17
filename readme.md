@@ -14,8 +14,6 @@
 
 Если нужно связаться со мной:
 - [Почта](mailto:romansklyar15@gmail.com)
-- [Канал телеграм](https://t.me/t_slab)
-- [Личный телеграм](https://t.me/slabyt)
 
 ## 🖼️ Изображения
 <img src="/images/ru/wled_phone_mode.jpg" width="50%"><img src="/images/ru/wled_phone_mode_info.jpg" width="50%">
