@@ -6,7 +6,6 @@
 # WLED на русском языке ✨
 В этом репозитории находятся **русскоязычные** версии проекта ***WLED***. Переведено лишь то, что мне было по-силам. Могут встречаться ошибки или опечатки, которые я проглядел. *Переведено одно расширение пользователя, называется* **battery_status_basic**.
 
-- Плейлист на [YouTube](https://www.youtube.com/playlist?list=PLRwckFEsix10P8FPWza_v2KWKHCvmXDxY)
 - Официальный [GitHub репозиторий](https://github.com/Aircoookie/WLED)
 - Официальный [сайт проекта](https://kno.wled.ge/)
 - Официальные [файлы релизов](https://github.com/Aircoookie/WLED/releases)
