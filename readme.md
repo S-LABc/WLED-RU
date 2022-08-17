@@ -5,10 +5,10 @@
 # WLED на русском языке ✨
 В этом репозитории находятся **русскоязычные** версии проекта ***WLED***. Переведено лишь то, что мне было по-силам. Могут встречаться ошибки или опечатки, которые я проглядел.
 
-- Официальный [GitHub репозиторий](https://github.com/Aircoookie/WLED)
+- Официальный [репозиторий проекта](https://github.com/Aircoookie/WLED)
 - Официальный [сайт проекта](https://kno.wled.ge/)
 - Официальные [файлы релизов](https://github.com/Aircoookie/WLED/releases)
-- **Русскоязычные** [файлы релизов](https://github.com/S-LABc/WLED-RU/releases)
+- Русскоязычные [файлы релизов](https://github.com/S-LABc/WLED-RU/releases)
 
 - [Как обновиться?](https://github.com/S-LABc/WLED-RU/wiki/%D0%9E%D0%B1%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F)
 - [Расширения пользователей](https://github.com/S-LABc/WLED-RU/wiki/%D0%A0%D0%B0%D1%81%D1%88%D0%B8%D1%80%D0%B5%D0%BD%D0%B8%D1%8F-%D0%BF%D0%BE%D0%BB%D1%8C%D0%B7%D0%BE%D0%B2%D0%B0%D1%82%D0%B5%D0%BB%D0%B5%D0%B9)
