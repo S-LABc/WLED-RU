@@ -233,7 +233,7 @@ class UsermodTemperature : public Usermod {
 
       if (temperature <= -100.0f) {
         temp.add(0);
-        temp.add(F(" Sensor Error!"));
+        temp.add(F(" Ошибка датчика!"));
         return;
       }
 
@@ -266,8 +266,8 @@ class UsermodTemperature : public Usermod {
       // we add JSON object: {"Temperature": {"pin": 0, "degC": true}}
       JsonObject top = root.createNestedObject(FPSTR(_name)); // usermodname
       top[FPSTR(_enabled)] = enabled;
-      top["pin"]  = temperaturePin;     // usermodparam
-      top["degC"] = degC;  // usermodparam
+      top["Контакт"]  = temperaturePin;     // usermodparam
+      top["Градусы-C"] = degC;  // usermodparam
       top[FPSTR(_readInterval)] = readingInterval / 1000;
       top[FPSTR(_parasite)] = parasite;
       DEBUG_PRINTLN(F("Temperature config saved."));
@@ -290,8 +290,8 @@ class UsermodTemperature : public Usermod {
       }
 
       enabled           = top[FPSTR(_enabled)] | enabled;
-      newTemperaturePin = top["pin"] | newTemperaturePin;
-      degC              = top["degC"] | degC;
+      newTemperaturePin = top["Контакт"] | newTemperaturePin;
+      degC              = top["Градусы-C"] | degC;
       readingInterval   = top[FPSTR(_readInterval)] | readingInterval/1000;
       readingInterval   = min(120,max(10,(int)readingInterval)) * 1000;  // convert to ms
       parasite          = top[FPSTR(_parasite)] | parasite;
@@ -324,7 +324,7 @@ class UsermodTemperature : public Usermod {
 };
 
 // strings to reduce flash memory usage (used more than twice)
-const char UsermodTemperature::_name[]         PROGMEM = "Temperature";
-const char UsermodTemperature::_enabled[]      PROGMEM = "enabled";
-const char UsermodTemperature::_readInterval[] PROGMEM = "read-interval-s";
-const char UsermodTemperature::_parasite[]     PROGMEM = "parasite-pwr";
+const char UsermodTemperature::_name[]         PROGMEM = "Температура";
+const char UsermodTemperature::_enabled[]      PROGMEM = "Включен";
+const char UsermodTemperature::_readInterval[] PROGMEM = "Интервал-опроса-с";
+const char UsermodTemperature::_parasite[]     PROGMEM = "Паразитное-питание";
