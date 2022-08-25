@@ -5,6 +5,7 @@
 # WLED на русском языке ✨
 В этом репозитории находятся **русскоязычные** версии проекта ***WLED***. Переведено лишь то, что мне было по-силам. Могут встречаться ошибки или опечатки, которые я проглядел.
 
+- Приложение для [Android](https://play.google.com/store/apps/details?id=com.aircoookie.WLED) и [iOS](https://apps.apple.com/us/app/wled/id1475695033)
 - Официальный [репозиторий проекта](https://github.com/Aircoookie/WLED)
 - Официальный [сайт проекта](https://kno.wled.ge/)
 - Официальные [файлы релизов](https://github.com/Aircoookie/WLED/releases)
